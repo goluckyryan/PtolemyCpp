@@ -1,0 +1,7 @@
+CHANNEL: P + 208PB
+ELAB=30
+v=44.0 r0=1.17 a=0.75 vi=2.0 ri0=1.32 ai=0.53
+vsi=8.0 rsi0=1.32 asi=0.53 vso=6.0 rso0=1.01 aso=0.75 rc0=1.25
+ELASTIC SCATTERING
+;
+RETURN

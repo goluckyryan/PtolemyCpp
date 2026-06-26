@@ -1,0 +1,27 @@
+HEADER  48Ca(16O,15N)49Sc g.s. 7/2- at 56 MeV, phiffer bound states
+$ Heavy-ion proton transfer using phiffer for both bound states
+$ 48Ca target absorbs a proton to form 49Sc (f7/2 proton)
+REACTION:  48CA(16O, 15N)49SC(7/2)  ELAB = 56
+PARAMETERSET PB100B
+PROJECTILE
+NODES = 0  L = 1
+R0 = 1.20  A = .65  RC0 = 1.20
+VSO = 7
+WAVEFUNCTION PHIFFER
+;
+TARGET
+NODES = 0  L = 3  JP = 7/2
+R0 = 1.25  A = .65
+VSO = 6.0  RSO0 = 1.10  ASO = .65  RC0 = 1.25
+WAVEFUNCTION PHIFFER
+;
+INCOMING
+V = 50  R0 = 1.30  A = .50
+VI = 50  RI0 = 1.30  AI = .50
+RC0 = 1.30
+;
+OUTGOING
+;
+ANGLEMAX = 60  ANGLESTEP = 1
+;
+RETURN

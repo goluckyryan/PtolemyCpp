@@ -1,0 +1,31 @@
+HEADER: 208Pb(p,d)207Pb g.s. 1/2- Ep=30 MeV
+REACTION: 208Pb(p,d)207Pb(1/2- 0.000) ELAB=30.0
+PARAMETERSET dpsb r0target lstep=1 lmin=0 lmax=60 maxlextrap=0 asymptopia=50
+
+PROJECTILE
+wavefunction av18 r0=1 a=0.5 l=0
+;
+TARGET
+nodes=2 l=1 jp=1/2
+v=60.0 r0=1.25 a=0.65
+vso=6.0 rso0=1.10 aso=0.65
+rc0=1.30
+;
+INCOMING
+V=51.18 R0=1.24 A=0.65
+VI=2.25 RI0=1.24 AI=0.65
+VSI=9.25 RSI0=1.25 ASI=0.63
+VSO=5.68 RSO0=1.08 ASO=0.59
+VSOI=-0.15 RSOI0=1.08 ASOI=0.59
+RC0=1.22
+;
+OUTGOING
+V=94.61 R0=1.15 A=0.79
+VI=2.66 RI0=1.32 AI=0.26
+VSI=10.07 RSI0=1.36 ASI=0.90
+VSO=3.557 RSO0=0.972 ASO=1.011
+RC0=1.303
+;
+anglemin=0 anglemax=180 anglestep=1
+;
+end

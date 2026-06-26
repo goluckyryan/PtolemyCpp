@@ -1,0 +1,29 @@
+HEADER: 12C(6Li,a)14N g.s. 1+ E=28 MeV (deuteron transfer)
+REACTION: 12C(6Li,a)14N(1+ 0.000) ELAB=28.0
+PARAMETERSET dpsb r0target maxlextrap=0 asymptopia=40
+lmin=0 lmax=40
+
+PROJECTILE
+nodes=0 l=0 jp=1
+v=80.0 r0=1.90 a=0.65
+rc0=1.30
+;
+TARGET
+nodes=0 l=0 jp=1
+v=100.0 r0=1.25 a=0.65
+rc0=1.30
+;
+INCOMING
+V=240.0 R0=1.30 A=0.70
+VI=30.0 RI0=1.60 AI=0.70
+VSO=3.0 RSO0=1.10 ASO=0.65
+RC0=1.30
+;
+OUTGOING
+V=200.0 R0=1.20 A=0.72
+VI=25.0 RI0=1.40 AI=0.72
+RC0=1.30
+;
+anglemin=0 anglemax=180 anglestep=2
+;
+end

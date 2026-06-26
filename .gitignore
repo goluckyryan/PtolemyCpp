@@ -1,0 +1,47 @@
+# Build artifacts
+build/
+*.o
+*.o.new
+*.cpp.new
+*.h.new
+ptolemy
+ptolemy_asan
+unit_tests
+*.pending
+
+# Local backups
+*.bak.*
+warnings_*.txt
+
+# Editor
+*.swp
+*~
+
+# OS
+.DS_Store
+
+# Development artifacts (local only, not in public repo)
+GOAL.md
+CLEANUP_PLAN.md
+REFACTOR_COMPLETE.md
+RESTRUCTURE.md
+SESSION_*.md
+README_dev.md
+flow.md
+
+# Editor / IDE
+.idea/
+.vscode/
+
+# Misc
+*.log
+core
+core.*
+*.orig
+*.rej
+PUBPREP_PLAN.md
+ARCHAEOLOGY_STRIP_PLAN.md
+
+# ponytail-strip helper (local only)
+strip_arch.py
+review_strip.sh

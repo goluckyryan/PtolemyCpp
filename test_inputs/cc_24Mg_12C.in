@@ -1,0 +1,22 @@
+HEADER  24Mg(12C,12C)24Mg CC, rotational 2+ at Ecm=20 MeV
+$ Light heavy-ion: 12C + 24Mg rotational coupling
+$ Excitation of 24Mg first 2+ state at 1.37 MeV
+$ Rotational model coupling
+REACTION   24Mg(12C, 12C)24Mg   ECM = 20
+CHANNELS(NAME, EP, JP, ET, JT, 0, 0.0, 0+, 0.0, 0+, 2, 0.0, 0+, 1.37, 2+)
+COUPLING(COUPLED, ORDER, BETAN, BETAC, NUCLEUS, MULTIPOLE = 2,
+    MODEL = ROTATIONAL,
+    0-2, 1, 0.52, 0.498 ;)
+PARAMETERSET  INELOCA1   MAXITER = 15
+LMAX = 55
+SCATASYMP = 40  STEPSPER = 12
+ANGLEMAX = 180  ANGLESTEP = 2
+INCOMING
+V = 36.0  R = 6.207  A = .52  RC0 = 1.24
+W = 4.0
+;
+OUTGOING
+R = 6.207  A = .52
+;
+;
+RETURN

@@ -1,0 +1,30 @@
+HEADER: 28Si(6Li,d)32S g.s. 0+ E=36 MeV (alpha transfer)
+REACTION: 28Si(6Li,d)32S(0+ 0.000) ELAB=36.0
+PARAMETERSET dpsb r0target maxlextrap=0 asymptopia=40
+lmin=0 lmax=40
+
+PROJECTILE
+nodes=0 l=0 jp=0
+v=100.0 r0=1.90 a=0.65
+rc0=1.30
+;
+TARGET
+nodes=0 l=0 jp=0
+v=120.0 r0=1.25 a=0.65
+rc0=1.30
+;
+INCOMING
+V=240.0 R0=1.30 A=0.70
+VI=30.0 RI0=1.60 AI=0.70
+VSO=3.0 RSO0=1.10 ASO=0.65
+RC0=1.30
+;
+OUTGOING
+V=90.0 R0=1.15 A=0.78
+VI=5.0 RI0=1.34 AI=0.68
+VSI=10.0 RSI0=1.34 ASI=0.68
+RC0=1.30
+;
+anglemin=0 anglemax=180 anglestep=2
+;
+end

@@ -1,0 +1,31 @@
+HEADER: 40Ca(t,p)42Ca g.s. 0+ Et=15 MeV (2n transfer)
+REACTION: 40Ca(t,p)42Ca(0+ 0.000) ELAB=15.0
+PARAMETERSET dpsb r0target maxlextrap=0 asymptopia=30
+lmin=0 lmax=30
+
+PROJECTILE
+nodes=0 l=0 jp=0
+v=170.0 r0=1.25 a=0.65
+rc0=1.30
+;
+TARGET
+nodes=0 l=0 jp=0
+v=55.0 r0=1.25 a=0.65
+rc0=1.30
+;
+INCOMING
+V=160.0 R0=1.20 A=0.72
+VI=20.0 RI0=1.40 AI=0.80
+VSO=8.0 RSO0=1.10 ASO=0.65
+RC0=1.30
+;
+OUTGOING
+V=52.0 R0=1.17 A=0.75
+VI=1.0 RI0=1.32 AI=0.60
+VSI=8.0 RSI0=1.32 ASI=0.60
+VSO=6.2 RSO0=1.01 ASO=0.75
+RC0=1.25
+;
+anglemin=0 anglemax=180 anglestep=2
+;
+end

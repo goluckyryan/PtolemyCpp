@@ -1,0 +1,21 @@
+HEADER  208Pb(90Zr,90Zr)208Pb CC, Coulomb excitation of 208Pb 3-
+$ Heavy-ion Coulomb excitation: 90Zr + 208Pb at 1350 MeV
+$ Two channels: ground state 0+ and first octupole 3- at 2.615 MeV
+$ Pure vibrational coupling with beta_N = beta_C = 0.00321
+REACTION:   208Pb(90Zr, 90Zr)208Pb  ELAB = 1350
+CHANNELS(NAME, ET, JT, EP, JP, 1, 0.0, 0+, 0.0, 0+, 2, 2.615, 3-, 0.0, 0+)
+COUPLING(COUPLED, 1-2)
+TRANSITION(TARGET, MULTIPOLE, BETAN, BETAC, 3, .00321, .00321)
+PARAMETERSET  INELOCA3   ASYMPTOPIA = 60
+LABANGLES
+ANGLESTEP = 0.2  ANGLEMAX = 30
+LMIN = 400  LMAX = 1000  LSTEP = 20
+INCOMING
+V = 50  R0 = 1.133  A = .736
+VI = 50  RI0 = 1.135  AI = .736
+RC0 = 1.2
+;
+OUTGOING
+;
+;
+RETURN

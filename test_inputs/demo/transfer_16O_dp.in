@@ -1,0 +1,30 @@
+HEADER: 16O(d,p)17O g.s. 5/2+ Ed=15 MeV
+REACTION: 16O(d,p)17O(5/2+ 0.000) ELAB=15.0
+PARAMETERSET dpsb r0target maxlextrap=0 asymptopia=30
+lmin=0 lmax=30
+
+PROJECTILE
+wavefunction av18 r0=1 a=0.5 l=0
+;
+TARGET
+nodes=0 l=2 jp=5/2
+v=60.0 r0=1.25 a=0.65
+vso=6.0 rso0=1.10 aso=0.65
+rc0=1.30
+;
+INCOMING
+V=90.0 R0=1.17 A=0.77
+VSI=12.0 RSI0=1.325 ASI=0.76
+VSO=7.33 RSO0=1.07 ASO=0.66
+RC0=1.30
+;
+OUTGOING
+V=52.0 R0=1.17 A=0.75
+VI=1.5 RI0=1.32 AI=0.60
+VSI=8.0 RSI0=1.32 ASI=0.60
+VSO=6.2 RSO0=1.01 ASO=0.75
+RC0=1.25
+;
+anglemin=0 anglemax=180 anglestep=2
+;
+end

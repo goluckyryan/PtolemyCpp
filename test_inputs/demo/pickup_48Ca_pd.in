@@ -1,0 +1,29 @@
+HEADER: 48Ca(p,d)47Ca g.s. 7/2- Ep=35 MeV
+REACTION: 48Ca(p,d)47Ca(7/2- 0.000) ELAB=35.0
+PARAMETERSET dpsb r0target lstep=1 lmin=0 lmax=40 maxlextrap=0 asymptopia=40
+
+PROJECTILE
+wavefunction av18 r0=1 a=0.5 l=0
+;
+TARGET
+nodes=0 l=3 jp=7/2
+v=60.0 r0=1.25 a=0.65
+vso=6.0 rso0=1.10 aso=0.65
+rc0=1.30
+;
+INCOMING
+V=49.0 R0=1.17 A=0.75
+VI=2.0 RI0=1.32 AI=0.60
+VSI=8.0 RSI0=1.32 ASI=0.60
+VSO=6.2 RSO0=1.01 ASO=0.75
+RC0=1.25
+;
+OUTGOING
+V=88.0 R0=1.15 A=0.78
+VSI=10.0 RSI0=1.34 ASI=0.80
+VSO=3.6 RSO0=0.97 ASO=1.01
+RC0=1.30
+;
+anglemin=0 anglemax=180 anglestep=1
+;
+end

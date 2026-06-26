@@ -1,0 +1,7 @@
+CHANNEL: D + 40CA
+ELAB=60
+v=78.0 r0=1.15 a=0.75 vi=2.3 ri0=1.34 ai=0.60
+vsi=10.2 rsi0=1.39 asi=0.69 vso=3.6 rso0=0.97 aso=1.01 rc0=1.30
+ELASTIC SCATTERING
+;
+RETURN

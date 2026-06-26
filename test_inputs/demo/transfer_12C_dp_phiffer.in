@@ -1,0 +1,32 @@
+HEADER: 12C(d,p)13C g.s. 1/2- Ed=20 MeV (PHIFFER target bound state)
+REACTION: 12C(d,p)13C(1/2- 0.000) ELAB=20.0
+PARAMETERSET dpsb r0target maxlextrap=0 asymptopia=30
+lmin=0 lmax=30
+
+PROJECTILE
+wavefunction av18 r0=1 a=0.5 l=0
+;
+TARGET
+wavefunction phiffer
+nodes=0 l=1 jp=1/2
+v=60.0 r0=1.25 a=0.65
+vso=6.0 rso0=1.10 aso=0.65
+rc0=1.30
+param1=1.0
+;
+INCOMING
+V=88.5 R0=1.17 A=0.77
+VSI=11.0 RSI0=1.325 ASI=0.76
+VSO=7.33 RSO0=1.07 ASO=0.66
+RC0=1.30
+;
+OUTGOING
+V=52.0 R0=1.17 A=0.75
+VI=1.0 RI0=1.32 AI=0.60
+VSI=8.0 RSI0=1.32 ASI=0.60
+VSO=6.2 RSO0=1.01 ASO=0.75
+RC0=1.25
+;
+anglemin=0 anglemax=180 anglestep=2
+;
+end
