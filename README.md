@@ -212,13 +212,35 @@ PARAMETERSET dpsb r0target
 ```
 
 **Default mode is bit-identical to Cleopatra/Maple/Ptolemy-f2c** — all
-36 regression tests pass bit-identically. `--fixedLS` produces output
-that differs from Cleopatra by a calculable factor (depending on
-projectile spin and the input `Vso` convention) but matches modern
-textbook DWBA expressions. **Use `--fixedLS` if your input `Vso` was
-tabulated for a code using standard `<L*S>` coupling** (e.g. FRESCO,
-ECIS), or if you want physically self-consistent spin-orbit strengths
-without adjusting `Vso` by the projectile spin.
+36 regression tests pass bit-identically.
+
+**Equivalence between modes (verified):**
+
+The two changes (kernel divisor `2S → 2`, and adjusting input `Vso`)
+compensate exactly. For a given physical input:
+
+| projectile | default mode `Vso` to use | `--fixedLS` mode `Vso` to use |
+|---|---|---|
+| p, n, t (spin-1/2) | `Vso_published` (no change) | `Vso_published / 2` |
+| d (spin-1) | `Vso_published` (no change) | `Vso_published` (no change — modes coincide) |
+| ³He (spin-1/2) | `Vso_published` (no change) | `Vso_published / 2` |
+| ⁶Li (spin-1) | `Vso_published` (no change) | `Vso_published` (no change — modes coincide) |
+| ⁷Li (spin-3/2) | `Vso_published × (3/2)` | `Vso_published × 3` |
+| α (spin-0) | irrelevant (no spin-orbit kernel) | irrelevant |
+
+Verified bit-identical: `./ptolemy --fixedLS` with `Vso=6.0` on
+208Pb(p,p) Ep=30 produces the same DCS as `./ptolemy` (default) with
+`Vso=3.0` on the same input — 0 curve-diff lines.
+
+For spin-1 deuteron, the divisor in default mode is already `2S = 2`,
+so `--fixedLS` is a no-op (also verified bit-identical on the
+`elastic_40Ca_d.in` test).
+
+**Use `--fixedLS` if your input `Vso` was tabulated for a code using
+standard `<L*S>` coupling** (FRESCO, ECIS, textbook DWBA), and you want
+to avoid manually adjusting `Vso` by the projectile spin. Default mode
+is preferable when reproducing legacy Ptolemy / Cleopatra results
+verbatim.
 
 ## License
 
