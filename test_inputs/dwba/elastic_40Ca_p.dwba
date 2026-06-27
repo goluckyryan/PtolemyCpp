@@ -1,0 +1,4 @@
+#========= DWBA input — elastic scattering (p,p)
+# 40Ca(p,p)40Ca at 30 MeV with the Koning-Delaroche proton potential.
+#reaction         gs-Jpi  orbital  Jpi(Ex)  Ex      ELab     Potentials
+40Ca(p,p)40Ca     0+      none     0+       0.000   30MeV    K

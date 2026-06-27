@@ -23,8 +23,8 @@ architecture.
 ```bash
 make                    # builds ./ptolemy
 ./ptolemy < test_inputs/transfer_12C_dp.in    # run one reaction
-./test_ptolemy.sh       # full 35-test bit-identical regression vs Maple
-make test               # builds + runs the 58 unit tests
+./test_ptolemy.sh       # full 36-test bit-identical regression vs Maple
+make test               # builds + runs the 117 unit tests
 make distclean          # clean build + binaries
 ```
 
@@ -39,11 +39,82 @@ MAPLE=/path/to/your/ptolemy ./test_ptolemy.sh    # custom reference
 MAPLE=missing ./test_ptolemy.sh                  # PtolemyCpp-only, skip diff
 ```
 
+## DWBA input format
+
+Besides a full Ptolemy input deck, `ptolemy` accepts a compact, human-readable
+**DWBA reaction description** — the workflow formerly handled by Cleopatra's
+standalone `InFileCreator`, now built in. One reaction per line:
+
+```
+target(in,out)residual   gs-Jpi   orbital   Jpi(Ex)   Ex   ELab   Potentials [beta]
+```
+
+```bash
+echo '208Pb(d,p)209Pb  0+  0g9/2  9/2+  0.000  7MeV/u  AK' | ./ptolemy
+./ptolemy test_inputs/dwba/transfer_208Pb_dp.dwba
+./ptolemy --dwba my_reactions.txt        # force DWBA mode
+```
+
+On a DWBA input, `ptolemy` prints `DWBA input detected, expanding...` to stderr,
+expands the description into a full Ptolemy deck (optical-model potentials,
+bound-state and projectile vertices, angular grid), and runs it.
+
+| Field        | Meaning                                                                 |
+|--------------|------------------------------------------------------------------------|
+| `target(in,out)residual` | e.g. `208Pb(d,p)209Pb`; light particles: `n p d t 3He a` |
+| `gs-Jpi`     | ground-state spin-parity of the target, e.g. `0+`, `3/2+`              |
+| `orbital`    | `none` (elastic/inelastic); `1g9/2` = node-l-j for single-nucleon transfer; `0L=2` = node + transferred L for two-nucleon transfer |
+| `Jpi(Ex)`    | spin-parity of the populated state, e.g. `9/2+`                        |
+| `Ex`         | excitation energy [MeV]                                                |
+| `ELab`       | beam energy: `30MeV` (total) or `7.39MeV/u` (per nucleon)             |
+| `Potentials` | 1 code for elastic/inelastic, 2 codes (incoming,outgoing) for transfer |
+| `beta`       | optional deformation length for inelastic scattering                   |
+
+Lines beginning with `#` and lines shorter than 5 characters are ignored.
+Parity and angular-momentum consistency (`σ_gs·σ_state = (−1)^l`, triangle rule)
+are checked; inconsistent lines are skipped with a diagnostic.
+
+**Detection.** A file argument is auto-detected by content (handles leading
+comments and an optional leading `DWBA` keyword line). On stdin, a line starting
+with a mass-number digit (`206Hg(...`) is treated as DWBA and any other start as
+a native deck; for a piped DWBA stream with leading comments, use `--dwba`.
+
+**Optical-potential codes** (`OpticalPotentialLibrary`, ported 1:1 from
+Cleopatra/Kay's `globals_beta_v5`):
+
+| Code | Reference | | Code | Reference |
+|------|-----------|-|------|-----------|
+| `A` | An & Cai (2006), d        | | `K` | Koning & Delaroche (2009), p |
+| `H` | Han, Shi, Shen (2006), d  | | `V` | Varner CH89 (1991), p |
+| `B` | Bojowald (1988), d        | | `M` | Menet (1971), p |
+| `D` | Daehnick rel. (1980), d   | | `G` | Becchetti & Greenlees (1969), p |
+| `C` | Daehnick non-rel. (1980), d (n/i) | | `P` | Perey (1963), p |
+| `L` | Lohr & Haeberli (1974), d | | `x` | Xu et al. (2011), 3He |
+| `Q` | Perey & Perey (1963), d   | | `l` | Liang, Li, Cai (2009), 3He |
+| `Z` | Zhang, Pang, Lou (2016), d (6,7Li) | | `p` | Pang et al. (2009), 3He/t |
+| `s` | Su & Han (2015), α        | | `c` | Li, Liang, Cai (2007), t |
+| `a` | Avrigeanu et al. (2009), α | | `t` | Trost et al. (1987), t |
+| `f` | Bassani & Picard (1969), α (fixed) | | `h` | Hyakutake et al. (1980), t |
+| `X` `Y` | Bardayan (2008), custom | | `b` | Becchetti & Greenlees (1971), 3He/t |
+
+(Code `C` is not implemented in the library yet.) `potentialRef(code)` returns the
+full citation; `callPotential(code, A, Z, E, Zproj)` returns the 16 Woods-Saxon
+parameters as an `OMPset`. The library is verified bit-identical to the original
+(see the `OpticalPotentialLibrary` unit tests).
+
+Examples live in `test_inputs/dwba/`. Single-nucleon `(d,p)` transfer, elastic,
+and two-nucleon `(t,p)` transfer run end-to-end. Two cases expand faithfully but
+do not yet run in PtolemyCpp's engine: collective `(p,p')`/`(d,d')` **inelastic**
+(the engine keys off `BELX` = B(EL), not the Cleopatra `BETA` deformation length
+— see [Known limitations](#known-limitations--collective-inelastic-model-has-a-narrow-domain)),
+and A=3 single-nucleon transfer using the `phiffer` projectile fit (e.g.
+`(d,3He)`, `(d,t)`); `(d,p)`-type `av18` transfers are unaffected.
+
 ## Stats
 
 - **28,668 LOC** across 54 `.cpp` / 49 `.h` (down from 38k Fortran baseline, −25%)
-- **35/35** reaction tests bit-identical to Cleopatra (via Maple oracle)
-- **58/58** unit tests pass
+- **36/36** reaction tests bit-identical to Cleopatra (via Maple oracle)
+- **117/117** unit tests pass
 - **~0.89s** wall vs Maple ~4.2s on the full 35-test suite at `-O2` (~4.7× faster)
 
 ## Architecture

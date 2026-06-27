@@ -1,0 +1,12 @@
+#========= DWBA input — single-proton pickup (d,3He)
+# 16O(d,3He)15N to the 1/2- ground state via the 0p1/2 proton orbital.
+#
+# NOTE: this expands faithfully to a Cleopatra-style deck (PARAMETERSET alpha3,
+# wavefunction phiffer with a v/r/a/param1/param2 projectile bound-state fit),
+# but PtolemyCpp's transfer engine does not currently evaluate that A=3
+# single-nucleon phiffer projectile fit, so this deck expands but does not run to
+# a cross section. (d,p)/(p,d) single-nucleon transfer — which uses the av18
+# projectile — does compute; see transfer_208Pb_dp.dwba. Included here to
+# document the (d,3He) pickup syntax.
+#reaction          gs-Jpi  orbital  Jpi(Ex)  Ex      ELab       Potentials
+16O(d,3He)15N      0+      0p1/2    1/2-     0.000   12MeV/u    Ax

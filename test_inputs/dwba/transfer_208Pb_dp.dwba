@@ -1,0 +1,4 @@
+#========= DWBA input — single-nucleon transfer (d,p)
+# 208Pb(d,p)209Pb populating the 9/2+ ground state via the 0g9/2 neutron orbital.
+#reaction          gs-Jpi  orbital  Jpi(Ex)  Ex      ELab       Potentials
+208Pb(d,p)209Pb    0+      0g9/2    9/2+     0.000   7MeV/u     AK

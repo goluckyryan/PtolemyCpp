@@ -1,0 +1,6 @@
+#========= DWBA input — two-nucleon transfer (t,p)
+# 10Be(t,p)12Be to the 0+ ground state, transferred pair coupled to L=0.
+# Two-nucleon transfer uses the "nL=L" orbital form (here node 1, L=0) and the
+# alpha3 / phiffer two-nucleon parameter set.
+#reaction          gs-Jpi  orbital  Jpi(Ex)  Ex      ELab      Potentials
+10Be(t,p)12Be      0+      1L=0     0+       0.000   5MeV/u    lA

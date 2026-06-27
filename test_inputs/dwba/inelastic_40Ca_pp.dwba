@@ -1,0 +1,11 @@
+#========= DWBA input — collective inelastic scattering (p,p')
+# 40Ca(p,p')40Ca exciting the 3- state at 3.737 MeV. The trailing token after the
+# potential is the deformation length (beta) for the collective form factor.
+#
+# NOTE: the DWBA *expansion* below is faithful to Cleopatra (PARAMETERSET
+# ineloca2, BETA=...), but PtolemyCpp's collective-inelastic engine keys off the
+# BELX = B(EL) reduced transition probability rather than the deformation length,
+# so this deck currently expands but does not run to a cross section. It is
+# included to document the inelastic input syntax.
+#reaction         gs-Jpi  orbital  Jpi(Ex)  Ex      ELab     Potentials  beta
+40Ca(p,p)40Ca     0+      none     3-       3.737   30MeV    K           1.0
