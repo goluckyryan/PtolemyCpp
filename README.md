@@ -103,6 +103,60 @@ expansion) live behind the `LinkulePlugin` interface.
 
 Stable. Bit-identical regression-tested. Open for contribution.
 
+### Known limitations — collective inelastic model has a narrow domain
+
+PtolemyCpp's inelastic scattering uses the **vibrational / collective
+excitation model** inherited from the original Fortran Ptolemy: the
+excitation is treated as a one-step surface deformation
+
+  V(r, θ) = V₀(r) - β_L R₀ ∂V/∂R · Y_LM(θ)
+
+parametrized by a single deformation amplitude `BELX` = β_L (input from
+`PARAMETERSET INELOCA*`). This is the right physics for low-lying
+collective 2⁺ / 3⁻ states of **even-even spherical heavy nuclei**
+(e.g. 90Zr, 208Pb, Sn isotopes, 40Ca) at moderate excitation. It is
+**physically inappropriate** for:
+
+- **Light targets** (12C, 16O, 20Ne, ...) where the excited states are
+  single-particle or cluster in character, not collective surface modes.
+- **Excitation energies above the particle-emission threshold** (~7 MeV
+  for 12C, ~12 MeV for 16O) where the daughter nucleus is unbound and
+  the DWBA assumption of a stable bound final state is violated.
+- **Large deformation amplitudes** outside the small-β linearization the
+  one-step model assumes.
+
+When the model is applied outside its domain — most visibly in
+`(d,d')` on light targets with E_x ≳ 4 MeV at 20–60 MeV beam energy —
+the code fails numerically downstream of the physics mismatch. The
+L-extrapolation breaks (`**** ERROR: CANNOT EXTRAPOLATE FOR CHANNEL`),
+|S(L)| diverges at high L, and the reported DCS becomes meaningless.
+All four codes in the lineage exhibit this in different ways:
+
+| Code | DCS @ 0° for 12C(d,d') 2⁺ 5MeV, Ed=30 | Behavior past failure |
+|---|---|---|
+| Cleopatra (Fortran ifort 32-bit) | 9 × 10¹⁶ mb/sr | extrapolation kept → garbage |
+| Maple (Cleopatra-faithful C++) | 9 × 10¹⁶ mb/sr | matches Cleopatra bit-identically |
+| Ptolemy-f2c (1:1 translation) | 9 × 10¹⁶ mb/sr | matches Cleopatra bit-identically |
+| **PtolemyCpp** (this code) | 35 mb/sr | partial sum, also wrong |
+
+For a random sweep of 800 reactions, the affected band was ~60 cases,
+all in the high-E_x light-target `(d,d')` corner described above. The
+DCS column flag `% FROM L>LMAX` is the canonical diagnostic: any value
+far from 0.0 means the answer is dominated by extrapolated
+(non-converged) partial waves and should not be trusted. Increasing
+`LMAX` / `LMAXADD` / `ASYMPTOPIA` typically makes things worse, not
+better, because the broken extrapolation simply runs longer.
+
+**For collective inelastic scattering outside the model's domain** —
+use FRESCO or ECIS with an explicit microscopic form factor, or
+compare against experimental data.
+
+**Reactions inside the model's domain are unaffected.** The 35-test
+regression suite (PtolemyCpp vs Cleopatra) passes 35/35 bit-identical;
+the 800-case random sweep shows 294/300 transfer + 199/200 elastic +
+238/300 inelastic PASS, with all 62 inelastic FAILs concentrated in the
+problematic regime.
+
 ## Contributing
 
 Run `./test_ptolemy.sh` to verify any change is bit-identical against the
