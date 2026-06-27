@@ -476,21 +476,21 @@ bool InputParser::parseKeyvals(const std::string& raw, ParsedInput::BSParams& bs
             bs.wavefunction = u; continue;
         }
 
-        if (getDouble(tok, "V",    dv)) { bs.V    = dv; continue; }
-        if (getDouble(tok, "R0",   dv)) { bs.r0   = dv; continue; }
-        if (getDouble(tok, "A",    dv)) { bs.a    = dv; continue; }
-        if (getDouble(tok, "VSO",  dv)) { bs.vSo  = dv; continue; }
-        if (getDouble(tok, "RSO0", dv)) { bs.rSo0 = dv; continue; }
-        if (getDouble(tok, "ASO",  dv)) { bs.aSo  = dv; continue; }
-        if (getDouble(tok, "RC0",  dv)) { bs.rC0  = dv; continue; }
+        if (getDouble(tok, "V",    dv)) { bs.V    = dv; bs.hasV    = true; continue; }
+        if (getDouble(tok, "R0",   dv)) { bs.r0   = dv; bs.hasR0   = true; continue; }
+        if (getDouble(tok, "A",    dv)) { bs.a    = dv; bs.hasA    = true; continue; }
+        if (getDouble(tok, "VSO",  dv)) { bs.vSo  = dv; bs.hasVSO  = true; continue; }
+        if (getDouble(tok, "RSO0", dv)) { bs.rSo0 = dv; bs.hasRSO0 = true; continue; }
+        if (getDouble(tok, "ASO",  dv)) { bs.aSo  = dv; bs.hasASO  = true; continue; }
+        if (getDouble(tok, "RC0",  dv)) { bs.rC0  = dv; bs.hasRC0  = true; continue; }
 
         if (getInt(tok, "L",     iv)) { bs.l     = iv; continue; }
         if (getInt(tok, "NODES", iv)) { bs.nodes = iv; continue; }
 
         // Handle bare "KEY=" followed by value in next token
-        auto tryBareDouble = [&](const std::string& key, double& destination) -> bool {
+        auto tryBareDouble = [&](const std::string& key, double& destination, bool& flag) -> bool {
             if (isBareKey(tok, key) && i + 1 < toks.size()) {
-                try { destination = std::stod(toks[i+1]); i++; return true; } catch (...) {}
+                try { destination = std::stod(toks[i+1]); flag = true; i++; return true; } catch (...) {}
             }
             return false;
         };
@@ -500,13 +500,13 @@ bool InputParser::parseKeyvals(const std::string& raw, ParsedInput::BSParams& bs
             }
             return false;
         };
-        if (tryBareDouble("V",    bs.V))    continue;
-        if (tryBareDouble("R0",   bs.r0))   continue;
-        if (tryBareDouble("A",    bs.a))    continue;
-        if (tryBareDouble("VSO",  bs.vSo))  continue;
-        if (tryBareDouble("RSO0", bs.rSo0)) continue;
-        if (tryBareDouble("ASO",  bs.aSo))  continue;
-        if (tryBareDouble("RC0",  bs.rC0))  continue;
+        if (tryBareDouble("V",    bs.V,    bs.hasV))    continue;
+        if (tryBareDouble("R0",   bs.r0,   bs.hasR0))   continue;
+        if (tryBareDouble("A",    bs.a,    bs.hasA))    continue;
+        if (tryBareDouble("VSO",  bs.vSo,  bs.hasVSO))  continue;
+        if (tryBareDouble("RSO0", bs.rSo0, bs.hasRSO0)) continue;
+        if (tryBareDouble("ASO",  bs.aSo,  bs.hasASO))  continue;
+        if (tryBareDouble("RC0",  bs.rC0,  bs.hasRC0))  continue;
         if (tryBareInteger("L",     bs.l))      continue;
         if (tryBareInteger("NODES", bs.nodes))  continue;
 
@@ -551,49 +551,49 @@ bool InputParser::parseKeyvals(const std::string& raw, ParsedInput::OMParams& om
     for (size_t i = 0; i < toks.size(); i++) {
         const std::string& tok = toks[i];
         double dv;
-        if (getDouble(tok, "V",    dv)) { om.V    = dv; continue; }
-        if (getDouble(tok, "R0",   dv)) { om.r0   = dv; continue; }
-        if (getDouble(tok, "A",    dv)) { om.a    = dv; continue; }
-        if (getDouble(tok, "VI",   dv)) { om.vI   = dv; continue; }
-        if (getDouble(tok, "RI0",  dv)) { om.rI0  = dv; continue; }
-        if (getDouble(tok, "AI",   dv)) { om.aI   = dv; continue; }
-        if (getDouble(tok, "VSI",  dv)) { om.vSi  = dv; continue; }
-        if (getDouble(tok, "rSi0", dv)) { om.rSi0 = dv; continue; }
-        if (getDouble(tok, "ASI",  dv)) { om.aSi  = dv; continue; }
-        if (getDouble(tok, "VSO",  dv)) { om.vSo  = dv; continue; }
-        if (getDouble(tok, "RSO0", dv)) { om.rSo0 = dv; continue; }
-        if (getDouble(tok, "ASO",  dv)) { om.aSo  = dv; continue; }
-        if (getDouble(tok, "VSOI", dv)) { om.vSoi = dv; continue; }
-        if (getDouble(tok, "RSOI0",dv)) { om.rSoi0= dv; continue; }
-        if (getDouble(tok, "ASOI", dv)) { om.aSoi = dv; continue; }
-        if (getDouble(tok, "RC0",  dv)) { om.rC0  = dv; continue; }
+        if (getDouble(tok, "V",    dv)) { om.V    = dv; om.hasV    = true; continue; }
+        if (getDouble(tok, "R0",   dv)) { om.r0   = dv; om.hasR0   = true; continue; }
+        if (getDouble(tok, "A",    dv)) { om.a    = dv; om.hasA    = true; continue; }
+        if (getDouble(tok, "VI",   dv)) { om.vI   = dv; om.hasVI   = true; continue; }
+        if (getDouble(tok, "RI0",  dv)) { om.rI0  = dv; om.hasRI0  = true; continue; }
+        if (getDouble(tok, "AI",   dv)) { om.aI   = dv; om.hasAI   = true; continue; }
+        if (getDouble(tok, "VSI",  dv)) { om.vSi  = dv; om.hasVSI  = true; continue; }
+        if (getDouble(tok, "rSi0", dv)) { om.rSi0 = dv; om.hasRSI0 = true; continue; }
+        if (getDouble(tok, "ASI",  dv)) { om.aSi  = dv; om.hasASI  = true; continue; }
+        if (getDouble(tok, "VSO",  dv)) { om.vSo  = dv; om.hasVSO  = true; continue; }
+        if (getDouble(tok, "RSO0", dv)) { om.rSo0 = dv; om.hasRSO0 = true; continue; }
+        if (getDouble(tok, "ASO",  dv)) { om.aSo  = dv; om.hasASO  = true; continue; }
+        if (getDouble(tok, "VSOI", dv)) { om.vSoi = dv; om.hasVSOI = true; continue; }
+        if (getDouble(tok, "RSOI0",dv)) { om.rSoi0= dv; om.hasRSOI0= true; continue; }
+        if (getDouble(tok, "ASOI", dv)) { om.aSoi = dv; om.hasASOI = true; continue; }
+        if (getDouble(tok, "RC0",  dv)) { om.rC0  = dv; om.hasRC0  = true; continue; }
         // Also accept "W" as alias for vI
-        if (getDouble(tok, "W",    dv)) { om.vI   = dv; continue; }
+        if (getDouble(tok, "W",    dv)) { om.vI   = dv; om.hasVI   = true; continue; }
 
         // Handle bare "KEY=" followed by value in next token
-        auto tryBare = [&](const std::string& key, double& destination) -> bool {
+        auto tryBare = [&](const std::string& key, double& destination, bool& flag) -> bool {
             if (isBareKey(tok, key) && i + 1 < toks.size()) {
-                try { destination = std::stod(toks[i+1]); i++; return true; } catch (...) {}
+                try { destination = std::stod(toks[i+1]); flag = true; i++; return true; } catch (...) {}
             }
             return false;
         };
-        if (tryBare("V",    om.V))    continue;
-        if (tryBare("R0",   om.r0))   continue;
-        if (tryBare("A",    om.a))    continue;
-        if (tryBare("VI",   om.vI))   continue;
-        if (tryBare("RI0",  om.rI0))  continue;
-        if (tryBare("AI",   om.aI))   continue;
-        if (tryBare("VSI",  om.vSi))  continue;
-        if (tryBare("rSi0", om.rSi0)) continue;
-        if (tryBare("ASI",  om.aSi))  continue;
-        if (tryBare("VSO",  om.vSo))  continue;
-        if (tryBare("RSO0", om.rSo0)) continue;
-        if (tryBare("ASO",  om.aSo))  continue;
-        if (tryBare("VSOI", om.vSoi)) continue;
-        if (tryBare("RSOI0",om.rSoi0))continue;
-        if (tryBare("ASOI", om.aSoi)) continue;
-        if (tryBare("RC0",  om.rC0))  continue;
-        if (tryBare("W",    om.vI))   continue;
+        if (tryBare("V",    om.V,    om.hasV))    continue;
+        if (tryBare("R0",   om.r0,   om.hasR0))   continue;
+        if (tryBare("A",    om.a,    om.hasA))    continue;
+        if (tryBare("VI",   om.vI,   om.hasVI))   continue;
+        if (tryBare("RI0",  om.rI0,  om.hasRI0))  continue;
+        if (tryBare("AI",   om.aI,   om.hasAI))   continue;
+        if (tryBare("VSI",  om.vSi,  om.hasVSI))  continue;
+        if (tryBare("rSi0", om.rSi0, om.hasRSI0)) continue;
+        if (tryBare("ASI",  om.aSi,  om.hasASI))  continue;
+        if (tryBare("VSO",  om.vSo,  om.hasVSO))  continue;
+        if (tryBare("RSO0", om.rSo0, om.hasRSO0)) continue;
+        if (tryBare("ASO",  om.aSo,  om.hasASO))  continue;
+        if (tryBare("VSOI", om.vSoi, om.hasVSOI)) continue;
+        if (tryBare("RSOI0",om.rSoi0,om.hasRSOI0))continue;
+        if (tryBare("ASOI", om.aSoi, om.hasASOI)) continue;
+        if (tryBare("RC0",  om.rC0,  om.hasRC0))  continue;
+        if (tryBare("W",    om.vI,   om.hasVI))   continue;
     }
     return true;
 }
@@ -705,24 +705,27 @@ static void stuffInpbuf(const std::string& line) {
     inputBuffer.inCh = 1;
 }
 
-// Helper: set OM params in FLOAT_common from a ParsedInput::OMParams block
+// Helper: set OM params in FLOAT_common from a ParsedInput::OMParams block.
+// Uses the `has<X>` flags (set true by parseKeyvals when the user explicitly
+// wrote the keyword) so that `VSI=0.0` correctly clears the prior-channel
+// value, distinct from the user simply omitting VSI.
 static void setOMparams(const ParsedInput::OMParams& om, Reaction& reaction) {
-    if (om.V    != 0.0) reaction.opticalPotentialParams.V    = om.V;
-    if (om.r0   != 0.0) reaction.opticalPotentialParams.R0   = om.r0;
-    if (om.a    != 0.0) reaction.opticalPotentialParams.A    = om.a;
-    if (om.vI   != 0.0) reaction.opticalPotentialParams.vI   = om.vI;
-    if (om.rI0  != 0.0) reaction.opticalPotentialParams.rI0  = om.rI0;
-    if (om.aI   != 0.0) reaction.opticalPotentialParams.aI   = om.aI;
-    if (om.vSi  != 0.0) reaction.opticalPotentialParams.vSi  = om.vSi;
-    if (om.rSi0 != 0.0) reaction.opticalPotentialParams.rSi0 = om.rSi0;
-    if (om.aSi  != 0.0) reaction.opticalPotentialParams.aSi  = om.aSi;
-    if (om.vSo  != 0.0) reaction.opticalPotentialParams.vSo  = om.vSo;
-    if (om.rSo0 != 0.0) reaction.opticalPotentialParams.rSo0 = om.rSo0;
-    if (om.aSo  != 0.0) reaction.opticalPotentialParams.aSo  = om.aSo;
-    if (om.vSoi != 0.0) reaction.opticalPotentialParams.vSoi = om.vSoi;
-    if (om.rSoi0!= 0.0) reaction.opticalPotentialParams.rSoi0= om.rSoi0;
-    if (om.aSoi != 0.0) reaction.opticalPotentialParams.aSoi = om.aSoi;
-    if (om.rC0  != 0.0) reaction.opticalPotentialParams.rC0  = om.rC0;
+    if (om.hasV)    reaction.opticalPotentialParams.V    = om.V;
+    if (om.hasR0)   reaction.opticalPotentialParams.R0   = om.r0;
+    if (om.hasA)    reaction.opticalPotentialParams.A    = om.a;
+    if (om.hasVI)   reaction.opticalPotentialParams.vI   = om.vI;
+    if (om.hasRI0)  reaction.opticalPotentialParams.rI0  = om.rI0;
+    if (om.hasAI)   reaction.opticalPotentialParams.aI   = om.aI;
+    if (om.hasVSI)  reaction.opticalPotentialParams.vSi  = om.vSi;
+    if (om.hasRSI0) reaction.opticalPotentialParams.rSi0 = om.rSi0;
+    if (om.hasASI)  reaction.opticalPotentialParams.aSi  = om.aSi;
+    if (om.hasVSO)  reaction.opticalPotentialParams.vSo  = om.vSo;
+    if (om.hasRSO0) reaction.opticalPotentialParams.rSo0 = om.rSo0;
+    if (om.hasASO)  reaction.opticalPotentialParams.aSo  = om.aSo;
+    if (om.hasVSOI) reaction.opticalPotentialParams.vSoi = om.vSoi;
+    if (om.hasRSOI0)reaction.opticalPotentialParams.rSoi0= om.rSoi0;
+    if (om.hasASOI) reaction.opticalPotentialParams.aSoi = om.aSoi;
+    if (om.hasRC0)  reaction.opticalPotentialParams.rC0  = om.rC0;
 }
 
 // Helper: the 3-statement head shared by the CONTRL incoming/outgoing channel-setup
@@ -755,15 +758,17 @@ static bool setupScatteringChannel(int channel, const ParsedInput::OMParams& om,
     return true;
 }
 
-// Helper: set BS (bound state) potential params in FLOAT_common
+// Helper: set BS (bound state) potential params in FLOAT_common.
+// Uses `has<X>` flags so explicit `=0.0` overrides distinguish from the user
+// omitting the keyword (same pattern as setOMparams).
 static void setBSparams(const ParsedInput::BSParams& bs, Reaction& reaction) {
-    if (bs.V    != 0.0) reaction.opticalPotentialParams.V   = bs.V;
-    if (bs.r0   != 0.0) reaction.opticalPotentialParams.R0  = bs.r0;
-    if (bs.a    != 0.0) reaction.opticalPotentialParams.A   = bs.a;
-    if (bs.vSo  != 0.0) reaction.opticalPotentialParams.vSo = bs.vSo;
-    if (bs.rSo0 != 0.0) reaction.opticalPotentialParams.rSo0= bs.rSo0;
-    if (bs.aSo  != 0.0) reaction.opticalPotentialParams.aSo = bs.aSo;
-    if (bs.rC0  != 0.0) reaction.opticalPotentialParams.rC0 = bs.rC0;
+    if (bs.hasV)    reaction.opticalPotentialParams.V   = bs.V;
+    if (bs.hasR0)   reaction.opticalPotentialParams.R0  = bs.r0;
+    if (bs.hasA)    reaction.opticalPotentialParams.A   = bs.a;
+    if (bs.hasVSO)  reaction.opticalPotentialParams.vSo = bs.vSo;
+    if (bs.hasRSO0) reaction.opticalPotentialParams.rSo0= bs.rSo0;
+    if (bs.hasASO)  reaction.opticalPotentialParams.aSo = bs.aSo;
+    if (bs.hasRC0)  reaction.opticalPotentialParams.rC0 = bs.rC0;
 }
 
 // ============================================================================

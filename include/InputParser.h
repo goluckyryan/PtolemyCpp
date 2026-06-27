@@ -70,7 +70,10 @@ struct ParsedInput {
     double spFactor      = -1.0;   // SPFACT=N (target spectroscopic factor); -1 = not set
     double spFactorProj      = -1.0;   // SPFACP=N (projectile spectroscopic factor); -1 = not set
 
-    // Bound-state block (projectile side)
+    // Bound-state block (projectile side). Each potential-parameter field has a
+    // paired `has<X>` bool marking whether the user explicitly wrote the keyword
+    // — same pattern as OMParams to distinguish `VSO=0.0` (explicit zero) from
+    // "not present in input" (leave the prior value alone).
     struct BSParams {
         int    nodes   = 0;
         int    l       = 0;
@@ -82,6 +85,9 @@ struct ParsedInput {
         double rSo0    = 0.0;
         double aSo     = 0.0;
         double rC0     = 0.0;    // Coulomb radius param
+        bool hasV    = false;  bool hasR0   = false;  bool hasA    = false;
+        bool hasVSO  = false;  bool hasRSO0 = false;  bool hasASO  = false;
+        bool hasRC0  = false;
         std::string wavefunction; // "av18", "rcwfn", "phiffer", or ""
         bool   set     = false;  // true if the block was present in input
     };
@@ -89,15 +95,25 @@ struct ParsedInput {
     BSParams targetBs;          // TARGET block
     int      jResidual   = 0;        // 2*J for residual (read as "jResidual=0+")
 
-    // Optical potential block
+    // Optical potential block. Each field has a paired `has<X>` bool that
+    // marks whether the user explicitly wrote the keyword in the input deck.
+    // The bool is true even when the explicit value is 0.0 — this distinguishes
+    // `VSI=0.0` (user asked for zero surface absorption) from the user leaving
+    // VSI unspecified (the prior-channel value should persist).
     struct OMParams {
         double V    = 0.0;   double r0   = 0.0;   double a    = 0.0;
         double vI   = 0.0;   double rI0  = 0.0;   double aI   = 0.0;
         double vSi  = 0.0;   double rSi0 = 0.0;   double aSi  = 0.0;
         double vSo  = 0.0;   double rSo0 = 0.0;   double aSo  = 0.0;
         double vSoi = 0.0;   double rSoi0= 0.0;   double aSoi = 0.0;
-        double rC0  = 0.0;   // 0 = not set (setOMparams skips when 0)
-        bool   set  = false; // true if the block was present in input
+        double rC0  = 0.0;
+        bool hasV    = false;  bool hasR0   = false;  bool hasA    = false;
+        bool hasVI   = false;  bool hasRI0  = false;  bool hasAI   = false;
+        bool hasVSI  = false;  bool hasRSI0 = false;  bool hasASI  = false;
+        bool hasVSO  = false;  bool hasRSO0 = false;  bool hasASO  = false;
+        bool hasVSOI = false;  bool hasRSOI0= false;  bool hasASOI = false;
+        bool hasRC0  = false;
+        bool   set   = false; // true if the block was present in input
     };
     OMParams incoming;
     OMParams outgoing;
