@@ -7,13 +7,16 @@
 #include "Elastic.h"
 #include "Inelastic.h"
 #include "Transfer.h"
+#include "DwbaInputExpander.h"
 
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <iterator>
 #include <algorithm>
 #include <cctype>
 #include <cstdio>
+#include <cstring>
 
 // File-scope alias to the InputParser-owned scanner buffer. Was an
 namespace { auto& inputBuffer = InputParser::buffer(); }
@@ -173,13 +176,67 @@ bool InputParser::parse(std::istream& f) {
 }
 
 // ============================================================================
+// hasDwbaKeyword() — true if the first non-blank, non-comment line is "DWBA".
+// ============================================================================
+bool InputParser::hasDwbaKeyword(const std::string& content) {
+    std::istringstream probe(content);
+    std::string line;
+    while (std::getline(probe, line)) {
+        std::string t = trim(line);
+        if (t.empty()) continue;
+        if (t[0] == '!' || t[0] == '#' || t[0] == '$') continue;
+        return toUpper(t) == "DWBA";
+    }
+    return false;
+}
+
+// ============================================================================
+// parseDwba() — expand a human-readable DWBA reaction description to a Ptolemy
+// deck (via DwbaInputExpander) and parse it. A leading "DWBA" keyword line, if
+// present, is stripped before expansion.
+// ============================================================================
+bool InputParser::parseDwba(const std::string& content) {
+    std::fprintf(stderr, "ptolemy: DWBA input detected, expanding...\n");
+    std::string deck = content;
+    std::istringstream probe(content);
+    std::string line;
+    while (std::getline(probe, line)) {
+        std::string t = trim(line);
+        if (t.empty() || t[0] == '!' || t[0] == '#' || t[0] == '$') continue;
+        if (toUpper(t) == "DWBA") {
+            size_t p = content.find(line);
+            if (p != std::string::npos)
+                deck = content.substr(0, p) + content.substr(p + line.size());
+        }
+        break;
+    }
+    std::string expanded = DwbaExpander::expand(deck);
+    std::istringstream in(expanded);
+    return parse(in);
+}
+
+// ============================================================================
 // parseFromArgs() — CLI entry.
 // Recognizes optional flags before the input file path:
 //   --fixedLS  use physics-standard <L*S> spin-orbit coupling.
+//   --dwba     force DWBA input mode (human-readable reaction description).
 //   --help     print usage.
 // If no input file given (only flags or nothing), reads from stdin.
+//
+// DWBA auto-detection:
+//   * file argument — slurp and use content-based detection (handles leading
+//     comments / "DWBA" keyword); native decks are parsed by parse(path).
+//   * stdin — detection MUST NOT extract from std::cin: the legacy linkule
+//     memory pool used by the elastic path is sensitive to heap/stream layout
+//     and any pre-read shifts it into a failing state. std::cin.peek() inspects
+//     the next byte without extracting. A DWBA reaction line starts with a
+//     mass-number digit; native Ptolemy decks start with a keyword letter or
+//     comment char. Leading digit => DWBA, else native (parse std::cin). For a
+//     DWBA stdin stream with leading comments or the "DWBA" keyword, pass --dwba
+//     or use a file argument.
 // ============================================================================
 bool InputParser::parseFromArgs(int argc, char** argv) {
+    bool forceDwba = false;
     int firstNonFlag = 1;
     while (firstNonFlag < argc) {
         const char* a = argv[firstNonFlag];
@@ -188,25 +245,63 @@ bool InputParser::parseFromArgs(int argc, char** argv) {
             ++firstNonFlag;
             continue;
         }
+        if (std::strcmp(a, "--dwba") == 0 || std::strcmp(a, "--DWBA") == 0) {
+            forceDwba = true;
+            ++firstNonFlag;
+            continue;
+        }
         if (std::strcmp(a, "--help") == 0 || std::strcmp(a, "-h") == 0) {
             std::fprintf(stderr,
-                "Usage: %s [--fixedLS] [input_file]\n"
+                "Usage: %s [--fixedLS] [--dwba] [input_file]\n"
                 "  --fixedLS    use physics-standard <L*S> spin-orbit coupling\n"
                 "               (default: Cleopatra-faithful sigma*L convention)\n"
-                "  input_file   path to input deck; if omitted, reads stdin.\n",
+                "  --dwba       force DWBA input mode (human-readable reaction\n"
+                "               description); otherwise auto-detected.\n"
+                "  input_file   path to input deck; if omitted, reads stdin.\n"
+                "               Accepts a native Ptolemy deck or a DWBA reaction\n"
+                "               description.\n",
                 argv[0]);
             return false;
         }
         break;  // first non-flag token → input file path
     }
+
+    // ---- file argument ----
     if (firstNonFlag < argc) {
-        if (!parse(argv[firstNonFlag])) {
-            std::fprintf(stderr, "ptolemy: parse failed on '%s'\n", argv[firstNonFlag]);
+        const char* srcName = argv[firstNonFlag];
+        std::ifstream f(srcName);
+        if (!f.is_open()) {
+            std::fprintf(stderr, "ptolemy: cannot open '%s'\n", srcName);
+            return false;
+        }
+        std::stringstream ss; ss << f.rdbuf();
+        std::string content = ss.str();
+        bool ok;
+        if (forceDwba || DwbaExpander::looksLikeDwba(content) || hasDwbaKeyword(content)) {
+            ok = parseDwba(content);
+        } else {
+            ok = parse(srcName);  // unchanged native path
+        }
+        if (!ok) { std::fprintf(stderr, "ptolemy: parse failed on '%s'\n", srcName); return false; }
+        return true;
+    }
+
+    // ---- stdin ----
+    bool isDwba = forceDwba;
+    if (!forceDwba) {
+        int c = std::cin.peek();   // inspect only; does not extract
+        if (c != EOF && std::isdigit((unsigned char)c)) isDwba = true;
+    }
+    if (isDwba) {
+        std::string content((std::istreambuf_iterator<char>(std::cin)),
+                             std::istreambuf_iterator<char>());
+        if (!parseDwba(content)) {
+            std::fprintf(stderr, "ptolemy: parse failed on stdin\n");
             return false;
         }
         return true;
     }
-    if (!parse(std::cin)) {
+    if (!parse(std::cin)) {        // unchanged native path
         std::fprintf(stderr, "ptolemy: parse failed on stdin\n");
         return false;
     }

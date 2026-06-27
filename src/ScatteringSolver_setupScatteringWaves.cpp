@@ -77,7 +77,7 @@ void ScatteringSolver::setupScatteringWaves(int& returnCode, int isStandalone, R
     // Identical post-linkule failure guard repeated after three linkule() calls;
     // returns true (caller then returns) when the call reported localRc < 0.
     auto bailIfCallFailed = [&]() {
-        if (localRc < 0) { localRc = 0; return true; }
+        if (localRc < 0) { localRc = 0; returnCode = localRc; return true; }
         return false;
     };
     if (reaction.linkuleData.linkuleAddr[1][3] == 0 && !(reaction.integrationGrid.R > 0 && taReal > 0)) {
@@ -136,7 +136,7 @@ void ScatteringSolver::setupScatteringWaves(int& returnCode, int isStandalone, R
             reaction.opticalPotentialParams.rSoi, reaction.opticalPotentialParams.aSoi);
     }
 //
-    if (localRc == 0) return;
+    if (localRc == 0) { returnCode = localRc; return; }
 //
 //
 //
@@ -440,6 +440,7 @@ void ScatteringSolver::setupScatteringWaves(int& returnCode, int isStandalone, R
         }
     }
     localRc = 1;
+    returnCode = localRc;   // publish success status to the caller's out-param
     return;
 //
 //

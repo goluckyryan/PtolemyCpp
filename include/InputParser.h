@@ -200,6 +200,13 @@ private:
     // Called from applyToCommons() as the "step 5" overrides block.
     void applyInputOverrides(Reaction& reaction);
 
+    // DWBA input support (Phase C). hasDwbaKeyword() is true when the first
+    // content line is the literal "DWBA". parseDwba() expands a human-readable
+    // DWBA reaction description to a Ptolemy deck (DwbaInputExpander) and parses
+    // it. Detection/dispatch live in parseFromArgs.
+    static bool hasDwbaKeyword(const std::string& content);
+    bool parseDwba(const std::string& content);
+
     // Parsing helpers
     bool parseLine(const std::string& raw);
     bool parseReactionLine(const std::string& rest);
