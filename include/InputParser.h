@@ -142,6 +142,10 @@ struct ParsedInput {
 
     // LMAXADD
     int lMaxAdditional = 0;
+
+    // CLI flag (from --fixedLS) — use physics-standard <L*S> coupling.
+    // Propagated to reaction.flags.fixedLS in applyToCommons().
+    bool cliFixedLS = false;
 };
 
 // ============================================================================

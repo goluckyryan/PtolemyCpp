@@ -166,6 +166,60 @@ The single hard rule: **commits must preserve bit-identical 35/35 + 58/58.**
 The exp recurrences in `OpticalPotential::fillWoodsSaxon` etc. are not
 equivalent to per-point `std::exp()`, so refactors there require care.
 
+### Spin-orbit convention — `--fixedLS` flag
+
+Ptolemy uses a non-standard spin-orbit coupling factor inherited from
+Cleopatra:
+
+```
+sDotL = [J(J+1) - L(L+1) - S(S+1)] / (2S)     ← default
+```
+
+For **spin-1/2 projectiles (p, n, t)** this equals `2*<L*S>`, which when
+combined with `woodsX`'s built-in factor of 2 in the radial form gives
+the standard `Vso * <L*S> * (1/r) dV/dr` physics. So proton optical-model
+tables (Koning-Delaroche, Becchetti-Greenlees, etc.) work without
+adjustment — they were calibrated against this convention.
+
+For **spin > 1/2 projectiles (deuteron, 6Li, 7Li, alpha bound states)**
+the `2S` divisor gives the wrong scaling. The effective spin-orbit
+strength is `Vso / S` instead of `Vso`. To use spin > 1/2 optical-model
+parameters as-published, the simple workaround is to multiply input `Vso`
+by `S` (e.g. ×2 for deuteron, ×3/2 for 7Li).
+
+Either the `--fixedLS` command-line flag OR a bare `FIXEDLS` keyword in
+the input deck selects the physics-standard convention instead:
+
+```
+sDotL = (1/2) * [J(J+1) - L(L+1) - S(S+1)] = <L*S>   ← with --fixedLS / FIXEDLS
+```
+
+CLI flag:
+
+```bash
+./ptolemy --fixedLS < my_input.in     # standard physics
+./ptolemy           < my_input.in     # Cleopatra-compatible (default)
+```
+
+Or in the input deck (any top-level position):
+
+```
+HEADER: ...
+REACTION: ...
+FIXEDLS                                 # ← keyword equivalent of --fixedLS
+PARAMETERSET dpsb r0target
+...
+```
+
+**Default mode is bit-identical to Cleopatra/Maple/Ptolemy-f2c** — all
+36 regression tests pass bit-identically. `--fixedLS` produces output
+that differs from Cleopatra by a calculable factor (depending on
+projectile spin and the input `Vso` convention) but matches modern
+textbook DWBA expressions. **Use `--fixedLS` if your input `Vso` was
+tabulated for a code using standard `<L*S>` coupling** (e.g. FRESCO,
+ECIS), or if you want physically self-consistent spin-orbit strengths
+without adjusting `Vso` by the projectile spin.
+
 ## License
 
 Derived from the original Argonne Ptolemy code. No formal license file at

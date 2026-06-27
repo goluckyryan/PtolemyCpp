@@ -11,4 +11,13 @@ struct Flags {
     int isElastic = 0;       // !=0 = elastic-scattering dispatch
     int nuConL = 0;          // continuum-L level selector (defaults.cpp seeds 3; ∈{2,3})
     int hasNextBlock = 0;    // channel-block dispatch code (InputParser sets 0..6)
+
+    // CLI flag --fixedLS: use physics-standard spin-orbit coupling
+    //   sDotL = (1/2) * [J(J+1) - L(L+1) - S(S+1)]   (standard <L*S>)
+    // instead of the Cleopatra-inherited convention
+    //   sDotL = (1/2S) * [J(J+1) - L(L+1) - S(S+1)]  (= sigma*L for spin-1/2 only)
+    // Default false to preserve bit-identity with Cleopatra/Maple/Ptolemy-f2c.
+    // When true, spin-orbit potential strength differs by factor (S) from
+    // Cleopatra for spin > 1/2 projectiles; see README "Spin-orbit convention".
+    bool fixedLS = false;
 };

@@ -149,10 +149,22 @@ void ScatteringSolver::solvePartialWave(int L, int jProj, int channelIndex, int 
     // use soRPointer/soIPointer != nullptr as guard (works for both pool and class-owned)
     if (reaction.distortedWave.channel[channelIndex].soRPointer != nullptr || reaction.distortedWave.channel[channelIndex].soIPointer != nullptr) {
 //
-//     sDotL IS REALLY  sigma.L
+//     Spin-orbit coupling factor.
+//     Default (Cleopatra-faithful): sDotL = sigma*L = 2<L*S>/(2S)
+//                                        = <L*S> for spin-1/2, off by S for higher spins.
+//     --fixedLS (physics-standard):  sDotL = <L*S> = (1/2)[J(J+1) - L(L+1) - S(S+1)]
+//     The Numerov kernel then multiplies sDotL by Vso * fillSpinOrbit(r);
+//     because fillSpinOrbit returns -2*(1/r)dV_ws/dr (also a Cleopatra
+//     convention with a built-in factor 2), default mode preserves the
+//     historical normalization that proton optical-model tables were
+//     calibrated against. See README "Spin-orbit convention" for the
+//     relation between input Vso under each mode.
 //
     sDotL = .25 * (jProj * (jProj + 2) - reaction.distortedWave.channel[channelIndex].twoSpin * (reaction.distortedWave.channel[channelIndex].twoSpin + 2)) - lLp1;
-    sDotL = sDotL / reaction.distortedWave.channel[channelIndex].twoSpin;
+    const double sDotL_divisor = reaction.flags.fixedLS
+        ? 2.0
+        : (double)reaction.distortedWave.channel[channelIndex].twoSpin;
+    sDotL = sDotL / sDotL_divisor;
     if (reaction.distortedWave.channel[channelIndex].soRPointer != nullptr) {
       const double* p = reaction.distortedWave.channel[channelIndex].soRPointer;
       for (i = startIndex; i <= stepCount; i++) waveReal[i + 4] += sDotL * p[i];

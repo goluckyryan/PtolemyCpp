@@ -173,12 +173,35 @@ bool InputParser::parse(std::istream& f) {
 }
 
 // ============================================================================
-// parseFromArgs() — CLI entry: argv[1] = path, else read from stdin
+// parseFromArgs() — CLI entry.
+// Recognizes optional flags before the input file path:
+//   --fixedLS  use physics-standard <L*S> spin-orbit coupling.
+//   --help     print usage.
+// If no input file given (only flags or nothing), reads from stdin.
 // ============================================================================
 bool InputParser::parseFromArgs(int argc, char** argv) {
-    if (argc >= 2) {
-        if (!parse(argv[1])) {
-            std::fprintf(stderr, "ptolemy: parse failed on '%s'\n", argv[1]);
+    int firstNonFlag = 1;
+    while (firstNonFlag < argc) {
+        const char* a = argv[firstNonFlag];
+        if (std::strcmp(a, "--fixedLS") == 0 || std::strcmp(a, "--fixed-ls") == 0) {
+            d_.cliFixedLS = true;
+            ++firstNonFlag;
+            continue;
+        }
+        if (std::strcmp(a, "--help") == 0 || std::strcmp(a, "-h") == 0) {
+            std::fprintf(stderr,
+                "Usage: %s [--fixedLS] [input_file]\n"
+                "  --fixedLS    use physics-standard <L*S> spin-orbit coupling\n"
+                "               (default: Cleopatra-faithful sigma*L convention)\n"
+                "  input_file   path to input deck; if omitted, reads stdin.\n",
+                argv[0]);
+            return false;
+        }
+        break;  // first non-flag token → input file path
+    }
+    if (firstNonFlag < argc) {
+        if (!parse(argv[firstNonFlag])) {
+            std::fprintf(stderr, "ptolemy: parse failed on '%s'\n", argv[firstNonFlag]);
             return false;
         }
         return true;
@@ -219,6 +242,16 @@ bool InputParser::parseLine(const std::string& raw) {
         d_ = ParsedInput{};
         section_ = Section::TOPLEVEL;
         inBlock_ = false;
+        return true;
+    }
+
+    // ---- FIXEDLS (input-deck switch) ----
+    // Bare keyword that selects the physics-standard <L*S> spin-orbit coupling
+    // for this run, same effect as the --fixedLS CLI flag. See README
+    // "Spin-orbit convention" for the relationship between input Vso under
+    // the two modes. May appear anywhere at top level.
+    if (kw == "FIXEDLS" || kw == "FIXED-LS") {
+        d_.cliFixedLS = true;
         return true;
     }
 
@@ -835,6 +868,10 @@ void InputParser::applyToCommons(Reaction& reaction) {
     // ATR/ATRI/ATL/ATLI/ATP/ATPI (tensor diffuseness, same cascade) dropped
     reaction.applyDefaults();
     newCard();
+
+    // CLI flag propagation: --fixedLS switches spin-orbit coupling to
+    // physics-standard <L*S> form (default is Cleopatra-faithful sigma*L).
+    reaction.flags.fixedLS = d.cliFixedLS;
 
     // -----------------------------------------------------------------------
     // 2a. Elastic: use CHANEL to parse "projectile + target"
