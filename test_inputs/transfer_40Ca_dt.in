@@ -1,0 +1,29 @@
+HEADER: 40Ca(d,t)39Ca g.s. 3/2+ (neutron pickup from 1d3/2) Ed=35 MeV
+REACTION: 40Ca(d,t)39Ca(3/2+ 0.000) ELAB=35.0
+PARAMETERSET dpsb r0target lstep=1 lmin=0 lmax=40 maxlextrap=0 asymptopia=40
+
+PROJECTILE
+wavefunction av18 r0=1 a=0.5 l=0
+;
+TARGET
+nodes=0 l=2 jp=3/2
+v=60.0 r0=1.25 a=0.65
+vso=6.0 rso0=1.10 aso=0.65
+rc0=1.30
+;
+INCOMING
+V=82.0 R0=1.15 A=0.75
+VI=2.3 RI0=1.34 AI=0.60
+VSI=10.2 RSI0=1.39 ASI=0.69
+VSO=3.6 RSO0=0.97 ASO=1.01
+RC0=1.30
+;
+OUTGOING
+V=151.0 R0=1.20 A=0.72
+VI=15.0 RI0=1.40 AI=0.84
+VSO=2.5 RSO0=1.20 ASO=0.72
+RC0=1.30
+;
+anglemin=0 anglemax=180 anglestep=1
+;
+end
