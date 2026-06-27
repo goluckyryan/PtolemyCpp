@@ -9,6 +9,8 @@
 #include "math/legendre.h"
 #include "OpticalPotential.h"   // new flat class under test
 #include "OpticalPotentialLibrary.h"  // named OM potential library (Phase A)
+#include "DwbaInputExpander.h"         // DWBA → Ptolemy deck expander (Phase B)
+#include <string>
 void setVsq(double rr1, double rr2, int iz1, int iz2, int k);  // seeds vcsq12 (source_misc.cpp)
 #include <cstdio>
 #include <cmath>
@@ -273,6 +275,7 @@ static void test_rcwfn() {
 static void test_numerov_free_particle();
 static void test_optical_potential_bit_identity();
 static void test_optical_potential_library();
+static void test_dwba_expander();
 
 int main() {
     printf("=== PtolemyCpp Unit Tests ===\n");
@@ -295,6 +298,9 @@ int main() {
 
     printf("\n--- OpticalPotentialLibrary (named OMPs) vs Cleopatra golden ---\n");
     test_optical_potential_library();
+
+    printf("\n--- DwbaInputExpander ---\n");
+    test_dwba_expander();
 
 
     printf("\n══════════════════════════════════════\n"
@@ -529,4 +535,89 @@ static void test_optical_potential_library() {
     // Unknown code → ok = false
     { OMPset p = callPotential("?", 40, 20, 10.0, 1);
       record("unknown code ok==false", p.ok ? 1.0 : 0.0, 0.0, p.ok ? 1.0 : 0.0, 0.5); }
+}
+
+// ============================================================================
+// DwbaInputExpander — expansion of human-readable reaction lines.
+// The 16O(p,p) inelastic case is checked byte-for-byte against the deck the
+// original Cleopatra InFileCreator produces (working/DWBA.in). Transfer-deck
+// structure and the auto-detect heuristic are checked too.
+// ============================================================================
+static void test_dwba_expander() {
+    auto checkBool = [&](const char* name, bool got, bool exp) {
+        record(name, got ? 1.0 : 0.0, exp ? 1.0 : 0.0,
+               (got == exp) ? 0.0 : 1.0, 0.5);
+    };
+    auto checkContains = [&](const char* name, const std::string& hay, const char* needle) {
+        bool found = hay.find(needle) != std::string::npos;
+        record(name, found ? 1.0 : 0.0, 1.0, found ? 0.0 : 1.0, 0.5);
+    };
+
+    // --- byte-identical inelastic deck (matches Cleopatra working/DWBA.in) ---
+    {
+        std::string in = "16O(p,p)16O       0+        none     2+           6.00    10MeV/u     KK\n";
+        std::string got = DwbaExpander::expand(in);
+        const std::string expected =
+"$============================================ Ex=6.00(p+16O|2+)KK,ELab=10.00\n"
+"reset\n"
+"REACTION: 16O(p,p)16O(2+ 6.00) ELAB= 10.000\n"
+"PARAMETERSET ineloca2 r0target\n"
+"JBIGA=0+\n"
+"$Koning and Delaroche (2009) 0.001 < E < 200 | 24 < A < 209 | Iso. Dep. | http://dx.doi.org/10.1016/S0375-9474(02)01321-0\n"
+"INCOMING\n"
+"v    =  53.076    r0 =   1.143    a =   0.675\n"
+"vi   =   0.827   ri0 =   1.143   ai =   0.675\n"
+"vsi  =   7.689  rsi0 =   1.302  asi =   0.527  rc0 =   1.436\n"
+";\n"
+"OUTGOING\n"
+"$Koning and Delaroche (2009) 0.001 < E < 200 | 24 < A < 209 | Iso. Dep. | http://dx.doi.org/10.1016/S0375-9474(02)01321-0\n"
+"v    =  55.458    r0 =   1.143    a =   0.675\n"
+"vi   =   0.383   ri0 =   1.143   ai =   0.675\n"
+"vsi  =   6.489  rsi0 =   1.302  asi =   0.527  rc0 =   1.436\n"
+";\n"
+"anglemin=0.000000 anglemax=180.000000 anglestep=1.000000\n"
+";\n"
+"end $================================== end of input\n";
+        checkBool("DWBA inelastic 16O(p,p) byte-identical", got == expected, true);
+    }
+
+    // --- single-nucleon transfer (d,p): deck structure ---
+    {
+        std::string in = "40Ca(d,p)41Ca   0+   1f7/2   7/2-   0.000   10MeV/u   AK\n";
+        std::string got = DwbaExpander::expand(in);
+        checkContains("dp REACTION line",   got, "REACTION: 40Ca(d,p)41Ca(7/2- 0.000)");
+        checkContains("dp PARAMETERSET",    got, "PARAMETERSET dpsb r0target");
+        checkContains("dp av18 wavefunc",   got, "wavefunction av18");
+        checkContains("dp JBIGA",           got, "JBIGA=0+");
+        checkContains("dp bound state l=3", got, "nodes=1 l=3 jp=7/2");
+        checkContains("dp INCOMING An&Cai", got, "INCOMING $An and Cai");
+        checkContains("dp OUTGOING Koning", got, "OUTGOING $Koning");
+    }
+
+    // --- two-nucleon transfer (t,p): alpha3 / phiffer / L= form ---
+    {
+        std::string in = "10Be(t,p)12Be   0+   1L=0   0+   0.000   5MeV/u   lA\n";
+        std::string got = DwbaExpander::expand(in);
+        checkContains("tp alpha3 paramset",  got, "PARAMETERSET alpha3 r0target");
+        checkContains("tp phiffer wavefunc", got, "wavefunction phiffer");
+        checkContains("tp L= bound form",    got, "nodes=1 L=0");
+    }
+
+    // --- elastic (Ex=0): ELASTIC SCATTERING / CHANNEL block ---
+    {
+        std::string in = "40Ca(d,d)40Ca   0+   none   0+   0.000   10MeV/u   AA\n";
+        std::string got = DwbaExpander::expand(in);
+        checkContains("elastic CHANNEL",  got, "CHANNEL d + 40Ca");
+        checkContains("elastic SCATTER",  got, "ELASTIC SCATTERING");
+    }
+
+    // --- auto-detect heuristic ---
+    checkBool("looksLikeDwba: reaction line",
+              DwbaExpander::looksLikeDwba("16O(p,p)16O 0+ none 2+ 6.00 10MeV/u KK"), true);
+    checkBool("looksLikeDwba: skip comments first",
+              DwbaExpander::looksLikeDwba("# comment\n206Hg(d,p)207Hg 0+ 1g9/2 9/2+ 0.0 7MeV/u AK"), true);
+    checkBool("looksLikeDwba: native deck -> false",
+              DwbaExpander::looksLikeDwba("reset\nREACTION: 16O(p,p)16O ELAB=10\nend"), false);
+    checkBool("looksLikeDwba: too few tokens -> false",
+              DwbaExpander::looksLikeDwba("16O(p,p)16O 0+ none"), false);
 }
