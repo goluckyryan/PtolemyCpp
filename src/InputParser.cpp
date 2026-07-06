@@ -611,6 +611,7 @@ bool InputParser::parseKeyvals(const std::string& raw, ParsedInput::BSParams& bs
         if (getDouble(tok, "RSO0", dv)) { bs.rSo0 = dv; bs.hasRSO0 = true; continue; }
         if (getDouble(tok, "ASO",  dv)) { bs.aSo  = dv; bs.hasASO  = true; continue; }
         if (getDouble(tok, "RC0",  dv)) { bs.rC0  = dv; bs.hasRC0  = true; continue; }
+        if (getDouble(tok, "E",    dv)) { bs.E    = dv; bs.hasE    = true; continue; }
 
         if (getInt(tok, "L",     iv)) { bs.l     = iv; continue; }
         if (getInt(tok, "NODES", iv)) { bs.nodes = iv; continue; }
@@ -635,6 +636,7 @@ bool InputParser::parseKeyvals(const std::string& raw, ParsedInput::BSParams& bs
         if (tryBareDouble("RSO0", bs.rSo0, bs.hasRSO0)) continue;
         if (tryBareDouble("ASO",  bs.aSo,  bs.hasASO))  continue;
         if (tryBareDouble("RC0",  bs.rC0,  bs.hasRC0))  continue;
+        if (tryBareDouble("E",    bs.E,    bs.hasE))    continue;
         if (tryBareInteger("L",     bs.l))      continue;
         if (tryBareInteger("NODES", bs.nodes))  continue;
 
@@ -1151,6 +1153,9 @@ void InputParser::applyToCommons(Reaction& reaction) {
         return;
     }
     reaction.internalState.boundChannel = 1;
+    // E= card overrides the mass-derived binding energy (channel_setup.cpp:236),
+    // e.g. to force a weakly-bound form factor for an above-threshold state.
+    if (d.projectileBs.hasE) reaction.energies.E = d.projectileBs.E;
     reaction.boundState.solve(returnCode, reaction);
     reaction.internalState.iDone |= (1 << 0);
     reaction.clearChannel(1);
@@ -1199,6 +1204,9 @@ void InputParser::applyToCommons(Reaction& reaction) {
         return;
     }
     reaction.internalState.boundChannel = 2;
+    // E= card overrides the mass-derived binding energy (channel_setup.cpp:236),
+    // e.g. to force a weakly-bound form factor for an above-threshold state.
+    if (d.targetBs.hasE) reaction.energies.E = d.targetBs.E;
     reaction.boundState.solve(returnCode, reaction);
     reaction.internalState.iDone |= (1 << 1);
     reaction.clearChannel(2);

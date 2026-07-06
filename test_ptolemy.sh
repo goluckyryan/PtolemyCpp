@@ -25,9 +25,9 @@ cd "$(dirname "$0")"
 
 # Inputs are vendored in ./test_inputs (override with TESTDIR=...).
 # The Maple oracle is for the bit-identical cross-check; advanced users can
-# point MAPLE=... at their own build. If it's missing we still run PtolemyCpp and
+# point Ptolemy-f2c=... at their own build. If it's missing we still run PtolemyCpp and
 # just skip the curve diff (see HAVE_MAPLE below).
-MAPLE=${MAPLE:-../Maple/ptolemy}
+Ptolemy-f2c=${Ptolemy-f2c:-../Ptolemy-f2c/ptolemy}
 PTOLEMY=./ptolemy
 TESTDIR=${TESTDIR:-./test_inputs}
 VERBOSE=${1:-""}
@@ -46,11 +46,11 @@ make -j$(nproc) 2>&1 | tail -1
 echo ""
 
 HAVE_MAPLE=1
-if [ ! -x "$MAPLE" ]; then
+if [ ! -x "$Ptolemy-f2c" ]; then
     HAVE_MAPLE=0
-    echo "WARNING: Maple binary not found at $MAPLE."
+    echo "WARNING: Ptolemy-f2c binary not found at $Ptolemy-f2c."
     echo "         Running PtolemyCpp only — the bit-identical curve diff is SKIPPED."
-    echo "         Set MAPLE=/path/to/ptolemy to enable the cross-check."
+    echo "         Set Ptolemy-f2c=/path/to/ptolemy to enable the cross-check."
     echo ""
 fi
 

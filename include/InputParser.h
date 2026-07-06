@@ -85,9 +85,10 @@ struct ParsedInput {
         double rSo0    = 0.0;
         double aSo     = 0.0;
         double rC0     = 0.0;    // Coulomb radius param
+        double E       = 0.0;    // binding-energy override (MeV); < 0 for bound
         bool hasV    = false;  bool hasR0   = false;  bool hasA    = false;
         bool hasVSO  = false;  bool hasRSO0 = false;  bool hasASO  = false;
-        bool hasRC0  = false;
+        bool hasRC0  = false;  bool hasE    = false;
         std::string wavefunction; // "av18", "rcwfn", "phiffer", or ""
         bool   set     = false;  // true if the block was present in input
     };

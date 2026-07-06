@@ -15,7 +15,7 @@ architecture.
   Repo: https://github.com/goluckyryan/Ptolemy-f2c
 - **This project (PtolemyCpp)** — a deep refactor of Ptolemy-f2c into modern C++17,
   eliminating all globals, all GOTOs, all COMMON blocks, and the NALLOC memory
-  pool. Bit-identical to Cleopatra-verified Maple (where Maple is the
+  pool. Bit-identical to Cleopatra-verified Ptolemy-f2c (where Ptolemy-f2c is the
   bit-identical-to-32-bit-Cleopatra reference build of the original Fortran).
 
 ## Quick start
@@ -35,8 +35,8 @@ Maple build (the 1:1 Fortran-faithful predecessor). To override the Maple
 path or skip the diff when unavailable:
 
 ```bash
-MAPLE=/path/to/your/ptolemy ./test_ptolemy.sh    # custom reference
-MAPLE=missing ./test_ptolemy.sh                  # PtolemyCpp-only, skip diff
+Ptolemy-f2c=/path/to/your/ptolemy ./test_ptolemy.sh    # custom reference
+Ptolemy-f2c=missing ./test_ptolemy.sh                  # PtolemyCpp-only, skip diff
 ```
 
 ## DWBA input format
@@ -73,6 +73,16 @@ bound-state and projectile vertices, angular grid), and runs it.
 Lines beginning with `#` and lines shorter than 5 characters are ignored.
 Parity and angular-momentum consistency (`σ_gs·σ_state = (−1)^l`, triangle rule)
 are checked; inconsistent lines are skipped with a diagnostic.
+
+**Above-threshold transfer states.** When `Ex` exceeds the transferred
+nucleon's separation energy the final single-particle state is unbound, and a
+bound-state form factor cannot reproduce the kinematic (positive) binding. As in
+Cleopatra's InFileCreator, the expander then emits `E=-.2` on the bound-state
+card, forcing a weakly-bound −0.2 MeV form factor so the DWBA still runs; an
+`Ex = … is above thresholds; Sp = …, Sn = …` note is printed to stderr. The
+bound shape is a stand-in for the true continuum state, so treat the absolute
+normalization with care. (`E=` on a native-deck `PROJECTILE`/`TARGET` block is
+honored the same way — it overrides the mass-derived binding energy.)
 
 **Detection.** A file argument is auto-detected by content (handles leading
 comments and an optional leading `DWBA` keyword line). On stdin, a line starting
@@ -112,10 +122,10 @@ and A=3 single-nucleon transfer using the `phiffer` projectile fit (e.g.
 
 ## Stats
 
-- **28,668 LOC** across 54 `.cpp` / 49 `.h` (down from 38k Fortran baseline, −25%)
-- **36/36** reaction tests bit-identical to Cleopatra (via Maple oracle)
+- **30,175 LOC** across 56 `.cpp` / 51 `.h` (down from 38k Fortran baseline, −21%)
+- **36/36** reaction tests bit-identical to Cleopatra (via Maple oracle) — 3 CC tests skipped (coupled channels not yet implemented)
 - **117/117** unit tests pass
-- **~0.89s** wall vs Maple ~4.2s on the full 35-test suite at `-O2` (~4.7× faster)
+- **~1.0s** wall vs Maple ~5.0s on the full 36-test suite at `-O2` (~4.9× faster)
 
 ## Architecture
 
@@ -233,7 +243,7 @@ problematic regime.
 Run `./test_ptolemy.sh` to verify any change is bit-identical against the
 Maple oracle. Run `make test` for the unit tests. PRs welcome.
 
-The single hard rule: **commits must preserve bit-identical 35/35 + 58/58.**
+The single hard rule: **commits must preserve bit-identical 36/36 + 117/117.**
 The exp recurrences in `OpticalPotential::fillWoodsSaxon` etc. are not
 equivalent to per-point `std::exp()`, so refactors there require care.
 
