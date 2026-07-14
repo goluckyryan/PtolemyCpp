@@ -4,6 +4,7 @@
 #include "CoulombWaveFunction.h"
 #include <cstdio>
 #include <cmath>
+#include <algorithm>
 
 // ============================================================================
 // SECTION 1: CoulombWaveFunction::computeFG — RCWFN
