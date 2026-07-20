@@ -606,7 +606,12 @@ bool InputParser::parseKeyvals(const std::string& raw, ParsedInput::BSParams& bs
 
         if (getDouble(tok, "V",    dv)) { bs.V    = dv; bs.hasV    = true; continue; }
         if (getDouble(tok, "R0",   dv)) { bs.r0   = dv; bs.hasR0   = true; continue; }
+        // Backward compat: Fortran syntax uses "R = value" (radius in fm)
+        if (getDouble(tok, "R",    dv)) { bs.r    = dv; bs.hasR    = true; continue; }
+        // Backward compat: Fortran PROJECTILE section uses "A = value" for diffuseness
         if (getDouble(tok, "A",    dv)) { bs.a    = dv; bs.hasA    = true; continue; }
+        // Backward compat: Fortran syntax uses "Rc" (Coulomb radius)
+        if (getDouble(tok, "RC",   dv)) { bs.rC0  = dv; bs.hasRC0  = true; continue; }
         if (getDouble(tok, "VSO",  dv)) { bs.vSo  = dv; bs.hasVSO  = true; continue; }
         if (getDouble(tok, "RSO0", dv)) { bs.rSo0 = dv; bs.hasRSO0 = true; continue; }
         if (getDouble(tok, "ASO",  dv)) { bs.aSo  = dv; bs.hasASO  = true; continue; }
@@ -631,14 +636,20 @@ bool InputParser::parseKeyvals(const std::string& raw, ParsedInput::BSParams& bs
         };
         if (tryBareDouble("V",    bs.V,    bs.hasV))    continue;
         if (tryBareDouble("R0",   bs.r0,   bs.hasR0))   continue;
+        // Backward compat: Fortran syntax uses "R= value" (radius in fm)
+        if (tryBareDouble("R",    bs.r,    bs.hasR))    continue;
         if (tryBareDouble("A",    bs.a,    bs.hasA))    continue;
         if (tryBareDouble("VSO",  bs.vSo,  bs.hasVSO))  continue;
         if (tryBareDouble("RSO0", bs.rSo0, bs.hasRSO0)) continue;
         if (tryBareDouble("ASO",  bs.aSo,  bs.hasASO))  continue;
         if (tryBareDouble("RC0",  bs.rC0,  bs.hasRC0))  continue;
+        // Backward compat: Fortran syntax uses "Rc= value" (Coulomb radius)
+        if (tryBareDouble("RC",   bs.rC0,  bs.hasRC0))  continue;
         if (tryBareDouble("E",    bs.E,    bs.hasE))    continue;
         if (tryBareInteger("L",     bs.l))      continue;
+        // Backward compat: Fortran syntax uses "NODES= value" (also "NODES = value")
         if (tryBareInteger("NODES", bs.nodes))  continue;
+        if (tryBareInteger("N",     bs.nodes))  continue;  // Fortran also accepts bare N
 
         // jp=3/2 or jp=7/2-  (half-integer J); JP= and J= share the same body
         auto parseBsJ = [&](const std::string& jStr) {
@@ -893,7 +904,9 @@ static bool setupScatteringChannel(int channel, const ParsedInput::OMParams& om,
 // omitting the keyword (same pattern as setOMparams).
 static void setBSparams(const ParsedInput::BSParams& bs, Reaction& reaction) {
     if (bs.hasV)    reaction.opticalPotentialParams.V   = bs.V;
+    // Backward compat: if R is given but R0 is not, use R as R0
     if (bs.hasR0)   reaction.opticalPotentialParams.R0  = bs.r0;
+    else if (bs.hasR) reaction.opticalPotentialParams.R0  = bs.r;
     if (bs.hasA)    reaction.opticalPotentialParams.A   = bs.a;
     if (bs.hasVSO)  reaction.opticalPotentialParams.vSo = bs.vSo;
     if (bs.hasRSO0) reaction.opticalPotentialParams.rSo0= bs.rSo0;

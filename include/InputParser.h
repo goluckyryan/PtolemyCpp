@@ -80,13 +80,15 @@ struct ParsedInput {
         double j       = -1.0;   // half-integer allowed; -1 = not set
         double V       = 0.0;    // real depth (MeV); 0 = use eigenvalue search
         double r0      = 1.0;    // radius parameter (fm)
+        double r       = 0.0;    // radius in fm (Fortran compat: R = r0 * A^(1/3))
         double a       = 0.5;    // diffuseness (fm)
         double vSo     = 0.0;
         double rSo0    = 0.0;
         double aSo     = 0.0;
         double rC0     = 0.0;    // Coulomb radius param
         double E       = 0.0;    // binding-energy override (MeV); < 0 for bound
-        bool hasV    = false;  bool hasR0   = false;  bool hasA    = false;
+        bool hasV    = false;  bool hasR0   = false;  bool hasR    = false;
+        bool hasA    = false;
         bool hasVSO  = false;  bool hasRSO0 = false;  bool hasASO  = false;
         bool hasRC0  = false;  bool hasE    = false;
         std::string wavefunction; // "av18", "rcwfn", "phiffer", or ""

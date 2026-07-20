@@ -87,7 +87,7 @@ for f in $TESTDIR/*.in; do
     t_s=$( { time timeout 60 $PTOLEMY < "$f" > /tmp/_s.out 2>/dev/null; } 2>&1 | grep real | sed 's/.*0m//;s/s//')
     s_rc=$?; rm -f fort.*
     if [ "$HAVE_MAPLE" = "1" ]; then
-        t_m=$( { time timeout 60 $MAPLE  < "$f" > /tmp/_m.out 2>/dev/null; } 2>&1 | grep real | sed 's/.*0m//;s/s//')
+        t_m=$( { time timeout 60 $Ptolemy-f2c < "$f" > /tmp/_m.out 2>/dev/null; } 2>&1 | grep real | sed 's/.*0m//;s/s//')
         m_rc=$?; rm -f fort.*
     else
         t_m="-"; m_rc=0; : > /tmp/_m.out
