@@ -238,6 +238,33 @@ the 800-case random sweep shows 294/300 transfer + 199/200 elastic +
 238/300 inelastic PASS, with all 62 inelastic FAILs concentrated in the
 problematic regime.
 
+## Testing
+
+The regression suite (`./test_ptolemy.sh`) runs 36 non-CC tests and compares
+PtolemyCpp output line-by-line against the Maple reference (the Cleopatra-
+verified Fortran oracle). All 36 tests pass bit-identical, including:
+
+- **Elastic scattering**: 6 tests (p, d, α on various targets)
+- **Inelastic scattering**: 11 tests (collective excitations)
+- **Transfer reactions**: 19 tests including:
+  - Single-nucleon: (d,p), (d,³He), (³He,d), (p,d), etc.
+  - Heavy-ion: (¹⁶O,¹⁵N), (¹⁶O,¹⁶O*), etc.
+  - Two-nucleon: (d,t), (³He,α), etc.
+  - **Phiffer bound states**: (d,p) and (¹⁶O,¹⁵N) with `WAVEFUNCTION PHIFFER`
+
+The (d,³He) reaction `Al_40Ca_d3He_2.47.in` is explicitly tested and verified
+bit-identical vs Maple. The phiffer linkule (linkule 17) is tested in 4 input
+files for heavy-ion and light-ion transfers.
+
+```bash
+./test_ptolemy.sh                    # full regression vs Maple
+MAPLE=~/OPENCLAW_SPACE/Maple/ptolemy ./test_ptolemy.sh  # custom Maple path
+MAPLE=missing ./test_ptolemy.sh      # skip diff, PtolemyCpp-only
+```
+
+Unit tests: `make test` runs 117 tests covering special functions,
+numerov solver, optical potentials, kinematics, etc.
+
 ## Contributing
 
 Run `./test_ptolemy.sh` to verify any change is bit-identical against the

@@ -381,15 +381,17 @@ string DwbaExpander::expand(const string& dwbaInput,
 
             // ---- projectile (light) side ----
             if (std::abs(numNucleonsTransfer) == 1) {
-                if (Aa <= 2 && Za <= 1 && Ab <= 2 && Zb <= 1) {   // d or p in
+                // Rule: if max(mass_number_a, mass_number_b) == 2, use av18
+                //       if max(mass_number_a, mass_number_b) >= 3, use phiffer
+                int maxMass = std::max(Aa, Ab);
+                if (maxMass <= 2) {   // (d,p), (p,d), (d,n), (n,d), etc.
                     os << "PARAMETERSET dpsb r0target \n";
                     os << "lstep=1 lmin=0 lmax=30 maxlextrap=0 asymptopia=50 \n";
                     os << "\n";
                     os << "PROJECTILE \n";
                     os << "wavefunction av18 \n";
                     os << "r0=1 a=0.5 l=0 rc0=1.2\n";
-                }
-                if ((3 <= Aa && Aa <= 4) || (3 <= Ab && Ab <= 4)) {   // 3He/t/a involved
+                } else if (maxMass >= 3) {   // (d,3He), (d,t), (3He,d), (t,d), etc.
                     os << "PARAMETERSET alpha3 r0target \n";
                     os << "lstep=1 lmin=0 lmax=30 maxlextrap=0 asymptopia=50 \n";
                     os << "\n";
@@ -401,7 +403,7 @@ string DwbaExpander::expand(const string& dwbaInput,
                     if (Za + Zb == 3) {   // (3He,d) or (d,3He)
                         os << "nodes=0 l=0 jp=1/2 spfacp=1.31 v=179.94 r=0.54 a=0.68 param1=0.64 param2=1.13 rc=2.0\n";
                     }
-                    if (Ab == 4) {
+                    if (std::max(Aa, Ab) == 4) {   // alpha-involved
                         os << "nodes=0 l=0 jp=1/2 spfacp=1.61 v=202.21 r=.93 a=.66 param1=.81 param2=.87 rc=2.0 $ rc=2 is a quirk\n";
                     }
                 }
