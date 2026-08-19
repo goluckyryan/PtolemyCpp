@@ -211,6 +211,16 @@ bool InputParser::parseDwba(const std::string& content) {
         break;
     }
     std::string expanded = DwbaExpander::expand(deck);
+    if (!createInfilePath_.empty()) {
+        std::ofstream out(createInfilePath_);
+        if (!out.is_open()) {
+            std::fprintf(stderr, "ptolemy: --create-infile: cannot open '%s' for writing\n",
+                         createInfilePath_.c_str());
+            return false;
+        }
+        out << expanded;
+        std::fprintf(stderr, "ptolemy: expanded deck written to %s\n", createInfilePath_.c_str());
+    }
     std::istringstream in(expanded);
     return parse(in);
 }
@@ -250,13 +260,29 @@ bool InputParser::parseFromArgs(int argc, char** argv) {
             ++firstNonFlag;
             continue;
         }
+        if (std::strncmp(a, "--create-infile=", 16) == 0) {
+            createInfilePath_ = std::string(a + 16);
+            ++firstNonFlag;
+            continue;
+        }
+        if (std::strcmp(a, "--create-infile") == 0) {
+            if (firstNonFlag + 1 >= argc) {
+                std::fprintf(stderr, "ptolemy: --create-infile requires a path argument\n");
+                return false;
+            }
+            createInfilePath_ = argv[firstNonFlag + 1];
+            firstNonFlag += 2;
+            continue;
+        }
         if (std::strcmp(a, "--help") == 0 || std::strcmp(a, "-h") == 0) {
             std::fprintf(stderr,
-                "Usage: %s [--fixedLS] [--dwba] [input_file]\n"
+                "Usage: %s [--fixedLS] [--dwba] [--create-infile path] [input_file]\n"
                 "  --fixedLS    use physics-standard <L*S> spin-orbit coupling\n"
                 "               (default: Cleopatra-faithful sigma*L convention)\n"
                 "  --dwba       force DWBA input mode (human-readable reaction\n"
                 "               description); otherwise auto-detected.\n"
+                "  --create-infile write the expanded Ptolemy deck to `path`\n"
+                "               (DWBA input only; no effect on native decks).\n"
                 "  input_file   path to input deck; if omitted, reads stdin.\n"
                 "               Accepts a native Ptolemy deck or a DWBA reaction\n"
                 "               description.\n",
@@ -280,6 +306,9 @@ bool InputParser::parseFromArgs(int argc, char** argv) {
         if (forceDwba || DwbaExpander::looksLikeDwba(content) || hasDwbaKeyword(content)) {
             ok = parseDwba(content);
         } else {
+            if (!createInfilePath_.empty())
+                std::fprintf(stderr,
+                    "ptolemy: note: --create-infile ignored (native Ptolemy deck, no DWBA expansion)\n");
             ok = parse(srcName);  // unchanged native path
         }
         if (!ok) { std::fprintf(stderr, "ptolemy: parse failed on '%s'\n", srcName); return false; }
@@ -301,6 +330,9 @@ bool InputParser::parseFromArgs(int argc, char** argv) {
         }
         return true;
     }
+    if (!createInfilePath_.empty())
+        std::fprintf(stderr,
+            "ptolemy: note: --create-infile ignored (native Ptolemy deck, no DWBA expansion)\n");
     if (!parse(std::cin)) {        // unchanged native path
         std::fprintf(stderr, "ptolemy: parse failed on stdin\n");
         return false;

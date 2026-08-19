@@ -194,6 +194,11 @@ public:
 private:
     ParsedInput d_;
 
+    // --create-infile <path> (CLI): when non-empty and the input went through the
+    // DWBA path, parseDwba() writes the expanded Ptolemy deck to this file
+    // before parsing it. No effect on native decks (a stderr note is emitted).
+    std::string createInfilePath_;
+
     // Private static storage for the input scanner buffer. Accessed only via
     // the public static buffer() accessor above. inline-static means single
     // definition across all TUs and reliable static-init.

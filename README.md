@@ -24,7 +24,7 @@ architecture.
 make                    # builds ./ptolemy
 ./ptolemy < test_inputs/transfer_12C_dp.in    # run one reaction
 ./test_ptolemy.sh       # full 36-test bit-identical regression vs Maple
-make test               # builds + runs the 117 unit tests
+make test               # builds + runs the 122 unit tests
 make distclean          # clean build + binaries
 ```
 
@@ -53,6 +53,7 @@ target(in,out)residual   gs-Jpi   orbital   Jpi(Ex)   Ex   ELab   Potentials [be
 echo '208Pb(d,p)209Pb  0+  0g9/2  9/2+  0.000  7MeV/u  AK' | ./ptolemy
 ./ptolemy test_inputs/dwba/transfer_208Pb_dp.dwba
 ./ptolemy --dwba my_reactions.txt        # force DWBA mode
+./ptolemy --create-infile deck.in my_reactions.txt   # also save the expanded deck
 ```
 
 On a DWBA input, `ptolemy` prints `DWBA input detected, expanding...` to stderr,
@@ -88,6 +89,20 @@ honored the same way — it overrides the mass-derived binding energy.)
 comments and an optional leading `DWBA` keyword line). On stdin, a line starting
 with a mass-number digit (`206Hg(...`) is treated as DWBA and any other start as
 a native deck; for a piped DWBA stream with leading comments, use `--dwba`.
+
+**`--create-infile path`.** By default the expanded deck exists only in memory and
+is discarded after parsing. `--create-infile <path>` (or `--create-infile=<path>`) also
+writes the full Ptolemy deck generated from the DWBA input to `path` before
+running it:
+
+```bash
+./ptolemy --create-infile deck.in test_inputs/dwba/transfer_208Pb_dp.dwba
+```
+
+The dumped file is a self-contained native deck: re-run it with
+`./ptolemy deck.in` for bit-identical output, or edit it to tweak grid, angle,
+or potential parameters. On a native Ptolemy deck the flag is a no-op (a note
+is printed to stderr).
 
 **Optical-potential codes** (`OpticalPotentialLibrary`, ported 1:1 from
 Cleopatra/Kay's `globals_beta_v5`):

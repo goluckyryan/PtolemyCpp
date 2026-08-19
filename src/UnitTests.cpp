@@ -10,6 +10,9 @@
 #include "OpticalPotential.h"   // new flat class under test
 #include "OpticalPotentialLibrary.h"  // named OM potential library (Phase A)
 #include "DwbaInputExpander.h"         // DWBA → Ptolemy deck expander (Phase B)
+#include "InputParser.h"               // CLI parsing (incl. --create-infile)
+#include <fstream>
+#include <sstream>
 #include <string>
 void setVsq(double rr1, double rr2, int iz1, int iz2, int k);  // seeds vcsq12 (source_misc.cpp)
 #include <cstdio>
@@ -276,6 +279,7 @@ static void test_numerov_free_particle();
 static void test_optical_potential_bit_identity();
 static void test_optical_potential_library();
 static void test_dwba_expander();
+static void test_dwba_create_infile();
 
 int main() {
     printf("=== PtolemyCpp Unit Tests ===\n");
@@ -301,6 +305,9 @@ int main() {
 
     printf("\n--- DwbaInputExpander ---\n");
     test_dwba_expander();
+
+    printf("\n--- InputParser --create-infile ---\n");
+    test_dwba_create_infile();
 
 
     printf("\n══════════════════════════════════════\n"
@@ -620,4 +627,49 @@ static void test_dwba_expander() {
               DwbaExpander::looksLikeDwba("reset\nREACTION: 16O(p,p)16O ELAB=10\nend"), false);
     checkBool("looksLikeDwba: too few tokens -> false",
               DwbaExpander::looksLikeDwba("16O(p,p)16O 0+ none"), false);
+}
+
+// ============================================================================
+// --create-infile — InputParser::parseFromArgs writes the expanded Ptolemy deck
+// to the requested path for DWBA input. The dumped text must be a valid
+// native deck (checked by the markers a native parser needs).
+// ============================================================================
+static void test_dwba_create_infile() {
+    auto checkBool = [&](const char* name, bool got, bool exp) {
+        record(name, got ? 1.0 : 0.0, exp ? 1.0 : 0.0,
+               (got == exp) ? 0.0 : 1.0, 0.5);
+    };
+    auto checkContains = [&](const char* name, const std::string& hay, const char* needle) {
+        bool found = hay.find(needle) != std::string::npos;
+        record(name, found ? 1.0 : 0.0, 1.0, found ? 0.0 : 1.0, 0.5);
+    };
+
+    const char* dwbaFile = "/tmp/pt_unit_createinfile.dwba";
+    const char* deckFile = "/tmp/pt_unit_createinfile.in";
+
+    {
+        std::ofstream f(dwbaFile);
+        f << "16O(d,p)17O 0+ 0d5/2 5/2+ 0.000 10MeV/u AK\n";
+    }
+    std::remove(deckFile);
+
+    {
+        std::vector<std::string> args = {"ptolemy", "--create-infile", deckFile, dwbaFile};
+        std::vector<char*> argv;
+        for (auto& s : args) argv.push_back(s.data());
+
+        InputParser p;
+        bool ok = p.parseFromArgs(static_cast<int>(argv.size()), argv.data());
+        checkBool("create-infile: DWBA parse ok", ok, true);
+
+        std::ifstream in(deckFile);
+        checkBool("create-infile: deck file created", in.good(), true);
+        std::stringstream ss; ss << in.rdbuf();
+        std::string got = ss.str();
+        checkContains("create-infile: REACTION line", got, "REACTION: 16O(d,p)17O(5/2+ 0.000)");
+        checkContains("create-infile: PARAMETERSET",   got, "PARAMETERSET dpsb r0target");
+        checkContains("create-infile: end marker",     got, "end $=");
+    }
+    std::remove(deckFile);
+    std::remove(dwbaFile);
 }
