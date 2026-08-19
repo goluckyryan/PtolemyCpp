@@ -280,6 +280,7 @@ static void test_optical_potential_bit_identity();
 static void test_optical_potential_library();
 static void test_dwba_expander();
 static void test_dwba_create_infile();
+static void test_dwba_inline();
 
 int main() {
     printf("=== PtolemyCpp Unit Tests ===\n");
@@ -308,6 +309,9 @@ int main() {
 
     printf("\n--- InputParser --create-infile ---\n");
     test_dwba_create_infile();
+
+    printf("\n--- InputParser inline DWBA reaction ---\n");
+    test_dwba_inline();
 
 
     printf("\n══════════════════════════════════════\n"
@@ -601,6 +605,16 @@ static void test_dwba_expander() {
         checkContains("dp OUTGOING Koning", got, "OUTGOING $Koning");
     }
 
+    // --- bare integer Ex must carry a decimal point in the REACTION line ---
+    // mScan classifies a numeric token without '.' as J, so a user-supplied
+    // `0` would be misread as a second J value and REACTN would fail.
+    {
+        std::string in = "16O(d,p)17O 0+ 0d5/2 5/2+ 0 10MeV/u AK\n";
+        std::string got = DwbaExpander::expand(in);
+        checkContains("bare-int Ex -> decimal in REACTION line", got,
+                      "REACTION: 16O(d,p)17O(5/2+ 0.0)");
+    }
+
     // --- two-nucleon transfer (t,p): alpha3 / phiffer / L= form ---
     {
         std::string in = "10Be(t,p)12Be   0+   1L=0   0+   0.000   5MeV/u   lA\n";
@@ -672,4 +686,55 @@ static void test_dwba_create_infile() {
     }
     std::remove(deckFile);
     std::remove(dwbaFile);
+}
+
+// ============================================================================
+// Inline DWBA reaction on the command line — parseFromArgs treats positional
+// tokens as a DWBA reaction line when the first one is not a readable file:
+//   ptolemy "16O(d,p)17O" 0+ 0d5/2 5/2+ 0 10MeV/u AK
+// Non-reaction tokens that are also not files must still fail.
+// ============================================================================
+static void test_dwba_inline() {
+    auto checkBool = [&](const char* name, bool got, bool exp) {
+        record(name, got ? 1.0 : 0.0, exp ? 1.0 : 0.0,
+               (got == exp) ? 0.0 : 1.0, 0.5);
+    };
+    auto checkContains = [&](const char* name, const std::string& hay, const char* needle) {
+        bool found = hay.find(needle) != std::string::npos;
+        record(name, found ? 1.0 : 0.0, 1.0, found ? 0.0 : 1.0, 0.5);
+    };
+
+    const char* deckFile = "/tmp/pt_unit_inline.in";
+    std::remove(deckFile);
+
+    // ptolemy --create-infile <path> "16O(d,p)17O" 0+ 0d5/2 5/2+ 0 10MeV/u AK
+    {
+        std::vector<std::string> args = {"ptolemy", "--create-infile", deckFile,
+                                         "16O(d,p)17O", "0+", "0d5/2", "5/2+", "0", "10MeV/u", "AK"};
+        std::vector<char*> argv;
+        for (auto& s : args) argv.push_back(s.data());
+
+        InputParser p;
+        bool ok = p.parseFromArgs(static_cast<int>(argv.size()), argv.data());
+        checkBool("inline: parse ok", ok, true);
+
+        std::ifstream in(deckFile);
+        checkBool("inline: deck file created", in.good(), true);
+        std::stringstream ss; ss << in.rdbuf();
+        std::string got = ss.str();
+        checkContains("inline: REACTION line", got, "REACTION: 16O(d,p)17O(5/2+ 0.0)");
+        checkContains("inline: ELAB 20 MeV",   got, "ELAB= 20.000");
+    }
+    std::remove(deckFile);
+
+    // Not a file, not a reaction line -> must still fail with "cannot open".
+    {
+        std::vector<std::string> args = {"ptolemy", "not_a_file_xyz", "0+"};
+        std::vector<char*> argv;
+        for (auto& s : args) argv.push_back(s.data());
+
+        InputParser p;
+        bool ok = p.parseFromArgs(static_cast<int>(argv.size()), argv.data());
+        checkBool("inline: non-reaction tokens rejected", ok, false);
+    }
 }

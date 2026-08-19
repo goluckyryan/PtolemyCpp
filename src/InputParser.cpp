@@ -244,6 +244,12 @@ bool InputParser::parseDwba(const std::string& content) {
 //     comment char. Leading digit => DWBA, else native (parse std::cin). For a
 //     DWBA stdin stream with leading comments or the "DWBA" keyword, pass --dwba
 //     or use a file argument.
+//   * inline — if the first positional argument is not a readable file and the
+//     positional tokens joined form a DWBA reaction line (looksLikeDwba), they
+//     are run as inline DWBA content:
+//       ptolemy "16O(d,p)17O" 0+ 0d5/2 5/2+ 0 10MeV/u AK
+//     (the shell needs the quoted parentheses). Anything else still gives the
+//     "cannot open" error plus a hint.
 // ============================================================================
 bool InputParser::parseFromArgs(int argc, char** argv) {
     bool forceDwba = false;
@@ -276,7 +282,7 @@ bool InputParser::parseFromArgs(int argc, char** argv) {
         }
         if (std::strcmp(a, "--help") == 0 || std::strcmp(a, "-h") == 0) {
             std::fprintf(stderr,
-                "Usage: %s [--fixedLS] [--dwba] [--create-infile path] [input_file]\n"
+                "Usage: %s [--fixedLS] [--dwba] [--create-infile path] [input_file | reaction line]\n"
                 "  --fixedLS    use physics-standard <L*S> spin-orbit coupling\n"
                 "               (default: Cleopatra-faithful sigma*L convention)\n"
                 "  --dwba       force DWBA input mode (human-readable reaction\n"
@@ -284,21 +290,39 @@ bool InputParser::parseFromArgs(int argc, char** argv) {
                 "  --create-infile write the expanded Ptolemy deck to `path`\n"
                 "               (DWBA input only; no effect on native decks).\n"
                 "  -h, --help   print this usage summary and exit.\n"
-                "  input_file   path to input deck; if omitted, reads stdin.\n"
-                "               Accepts a native Ptolemy deck or a DWBA reaction\n"
-                "               description.\n",
+                "  input        path to input deck, or an inline DWBA reaction\n"
+                "               line, e.g. ptolemy \"16O(d,p)17O\" 0+ 0d5/2 5/2+ 0\n"
+                "               10MeV/u AK (quote it for the shell). If omitted,\n"
+                "               reads stdin. Accepts a native Ptolemy deck or a\n"
+                "               DWBA reaction description.\n",
                 argv[0]);
             return false;
         }
         break;  // first non-flag token → input file path
     }
 
-    // ---- file argument ----
+    // ---- file argument (or inline DWBA reaction line) ----
     if (firstNonFlag < argc) {
         const char* srcName = argv[firstNonFlag];
         std::ifstream f(srcName);
         if (!f.is_open()) {
+            // Not a readable file. If the positional tokens form a DWBA
+            // reaction line, run them inline: ptolemy "16O(d,p)17O" 0+ ...
+            std::string inlineContent = argv[firstNonFlag];
+            for (int i = firstNonFlag + 1; i < argc; ++i)
+                inlineContent += " " + std::string(argv[i]);
+            if (DwbaExpander::looksLikeDwba(inlineContent)) {
+                std::fprintf(stderr, "ptolemy: inline DWBA reaction on the command line\n");
+                if (!parseDwba(inlineContent)) {
+                    std::fprintf(stderr, "ptolemy: parse failed on inline DWBA reaction\n");
+                    return false;
+                }
+                return true;
+            }
             std::fprintf(stderr, "ptolemy: cannot open '%s'\n", srcName);
+            std::fprintf(stderr,
+                "               hint: to run a reaction directly, quote it, e.g.\n"
+                "                     ptolemy \"16O(d,p)17O\" 0+ 0d5/2 5/2+ 0 10MeV/u AK\n");
             return false;
         }
         std::stringstream ss; ss << f.rdbuf();

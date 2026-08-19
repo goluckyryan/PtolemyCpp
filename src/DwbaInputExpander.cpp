@@ -229,6 +229,14 @@ string DwbaExpander::expand(const string& dwbaInput,
         int parityValue = (parity == "+" ? 1 : -1);
 
         string Ex             = str0[4];
+        // The deck scanner (mScan) classifies a numeric token by the presence
+        // of a decimal point: '.' => E*, bare integer => J. A user-supplied Ex
+        // like `0` would be misread as a second J value and REACTN would fail,
+        // so the REACTION line always carries a decimal point. Tokens that
+        // already have one (or an e/E/d/D exponent) pass through untouched,
+        // keeping expanded decks byte-identical to before.
+        string exField = Ex;
+        if (exField.find_first_of(".eEdD") == std::string::npos) exField += ".0";
         string reactionEnergy = str0[5];
         string potential      = str0[6];
 
@@ -349,7 +357,7 @@ string DwbaExpander::expand(const string& dwbaInput,
                 os << "reset\n";
                 std::snprintf(hdr, sizeof hdr, "REACTION: %s%s%s(%s%s %s) ELAB=%7.3f\n",
                     isoA.c_str(), reactionType.c_str(), isoB.c_str(),
-                    spin.c_str(), parity.c_str(), Ex.c_str(), totalBeamEnergy);
+                    spin.c_str(), parity.c_str(), exField.c_str(), totalBeamEnergy);
                 os << hdr;
                 os << "PARAMETERSET ineloca2 r0target\n";
                 std::snprintf(hdr, sizeof hdr, "JBIGA=%s\n", gsSpinparityA.c_str()); os << hdr;
@@ -376,7 +384,7 @@ string DwbaExpander::expand(const string& dwbaInput,
             os << "reset\n";
             std::snprintf(hdr, sizeof hdr, "REACTION: %s%s%s(%s%s %s) ELAB=%7.3f\n",
                 isoA.c_str(), reactionType.c_str(), isoB.c_str(),
-                spin.c_str(), parity.c_str(), Ex.c_str(), totalBeamEnergy);
+                spin.c_str(), parity.c_str(), exField.c_str(), totalBeamEnergy);
             os << hdr;
 
             // ---- projectile (light) side ----

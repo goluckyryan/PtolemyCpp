@@ -25,7 +25,7 @@ make                                            # builds ./ptolemy
 ./ptolemy test_inputs/transfer_48Ca_dp.in       # run a native Ptolemy deck
 ./ptolemy test_inputs/dwba/transfer_208Pb_dp.dwba  # run a DWBA reaction description
 ./test_ptolemy.sh                               # full bit-identical regression vs Maple
-make test                                       # builds + runs the 122 unit tests
+make test                                       # builds + runs the 128 unit tests
 make distclean                                  # clean build + binaries
 ```
 
@@ -43,12 +43,12 @@ Ptolemy-f2c=missing ./test_ptolemy.sh                  # PtolemyCpp-only, skip d
 ## Command-line reference
 
 ```
-Usage: ptolemy [--fixedLS] [--dwba] [--create-infile path] [input_file]
+Usage: ptolemy [--fixedLS] [--dwba] [--create-infile path] [input_file | reaction line]
 ```
 
-Flags may appear in any order before `input_file`. If `input_file` is omitted,
-the input is read from **stdin** (the legacy `./ptolemy < input.in` shape).
-`./ptolemy --help` (or `-h`) prints the usage summary.
+Flags may appear in any order before the input. The input is a deck file, an
+inline DWBA reaction line, or — if omitted — **stdin** (the legacy
+`./ptolemy < input.in` shape). `./ptolemy --help` (or `-h`) prints the usage summary.
 
 ### Flags
 
@@ -64,12 +64,13 @@ Flags combine freely, e.g.
 
 ### Input types
 
-Two input formats are accepted, either as a file argument or on stdin:
+Two input formats are accepted, as a file argument, inline on the command
+line, or on stdin:
 
-| Format | What it is | File argument | stdin |
-|---|---|---|---|
-| **Native Ptolemy deck** (e.g. `test_inputs/transfer_48Ca_dp.in`) | Full deck: `REACTION:` / `CHANNEL` / `PARAMETERSET` header, `PROJECTILE` / `TARGET` / `INCOMING` / `OUTGOING` blocks, angular range, `end` | default when the content is not DWBA | first byte is not a digit |
-| **DWBA reaction description** (e.g. `test_inputs/dwba/transfer_208Pb_dp.dwba`) | One `target(in,out)residual ...` line per reaction; expanded in memory into a native deck (potentials, vertices, angular grid) and then run | first content line is a reaction line with ≥ 7 tokens, or the literal `DWBA` keyword | first byte is a mass number (digit); otherwise pass `--dwba` |
+| Format | What it is | File argument | Command line | stdin |
+|---|---|---|---|---|
+| **Native Ptolemy deck** (e.g. `test_inputs/transfer_48Ca_dp.in`) | Full deck: `REACTION:` / `CHANNEL` / `PARAMETERSET` header, `PROJECTILE` / `TARGET` / `INCOMING` / `OUTGOING` blocks, angular range, `end` | default when the content is not DWBA | — (files only) | first byte is not a digit |
+| **DWBA reaction description** (e.g. `test_inputs/dwba/transfer_208Pb_dp.dwba`) | One `target(in,out)residual ...` line per reaction; expanded in memory into a native deck (potentials, vertices, angular grid) and then run | first content line is a reaction line with ≥ 7 tokens, or the literal `DWBA` keyword | all positional tokens are joined and run as one DWBA line when the first is not a readable file | first byte is a mass number (digit); otherwise pass `--dwba` |
 
 Notes:
 
@@ -79,6 +80,9 @@ Notes:
   expansion).
 - Piped DWBA streams with leading `#` comments or a `DWBA` keyword line are
   not auto-detected on stdin; use `--dwba` or pass the file as an argument.
+- Inline reaction: quote the reaction token for the shell (parentheses are
+  metacharacters); the tokens are joined with single spaces, so any amount
+  of whitespace between fields works.
 - Full DWBA field spec, validity checks, and optical-potential codes:
   [DWBA input format](#dwba-input-format).
 
@@ -87,6 +91,7 @@ Notes:
 ./ptolemy test_inputs/dwba/transfer_208Pb_dp.dwba           # DWBA (file, auto-detected)
 ./ptolemy < test_inputs/transfer_48Ca_dp.in                 # native deck (stdin)
 echo '208Pb(d,p)209Pb  0+  0g9/2  9/2+  0.000  7MeV/u  AK' | ./ptolemy  # DWBA (stdin)
+./ptolemy "16O(d,p)17O" 0+ 0d5/2 5/2+ 0 10MeV/u AK          # DWBA inline on the command line
 ```
 
 ## DWBA input format
@@ -124,6 +129,9 @@ bound-state and projectile vertices, angular grid), and runs it.
 Lines beginning with `#` and lines shorter than 5 characters are ignored.
 Parity and angular-momentum consistency (`σ_gs·σ_state = (−1)^l`, triangle rule)
 are checked; inconsistent lines are skipped with a diagnostic.
+`Ex` may be written as a bare integer (e.g. `0`); the expanded `REACTION:`
+line always carries a decimal point, since the deck scanner tells E* apart
+from J by the presence of one.
 
 **Above-threshold transfer states.** When `Ex` exceeds the transferred
 nucleon's separation energy the final single-particle state is unbound, and a
@@ -189,7 +197,7 @@ and A=3 single-nucleon transfer using the `phiffer` projectile fit (e.g.
 
 - **30,175 LOC** across 56 `.cpp` / 51 `.h` (down from 38k Fortran baseline, −21%)
 - **38/38** reaction tests bit-identical to Cleopatra (via Maple oracle) — 3 CC tests skipped (coupled channels not yet implemented)
-- **122/122** unit tests pass
+- **128/128** unit tests pass
 - **~1.0s** wall vs Maple ~5.0s on the full 38-test suite at `-O2` (~4.9× faster)
 
 ## Architecture
@@ -327,7 +335,7 @@ MAPLE=~/OPENCLAW_SPACE/Maple/ptolemy ./test_ptolemy.sh  # custom Maple path
 MAPLE=missing ./test_ptolemy.sh      # skip diff, PtolemyCpp-only
 ```
 
-Unit tests: `make test` runs 122 tests covering special functions,
+Unit tests: `make test` runs 128 tests covering special functions,
 numerov solver, optical potentials, DWBA expansion/CLI, kinematics, etc.
 
 ## Contributing
@@ -335,7 +343,7 @@ numerov solver, optical potentials, DWBA expansion/CLI, kinematics, etc.
 Run `./test_ptolemy.sh` to verify any change is bit-identical against the
 Maple oracle. Run `make test` for the unit tests. PRs welcome.
 
-The single hard rule: **commits must preserve bit-identical 38/38 + 122/122.**
+The single hard rule: **commits must preserve bit-identical 38/38 + 128/128.**
 The exp recurrences in `OpticalPotential::fillWoodsSaxon` etc. are not
 equivalent to per-point `std::exp()`, so refactors there require care.
 
