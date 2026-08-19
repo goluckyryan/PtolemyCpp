@@ -283,6 +283,7 @@ bool InputParser::parseFromArgs(int argc, char** argv) {
                 "               description); otherwise auto-detected.\n"
                 "  --create-infile write the expanded Ptolemy deck to `path`\n"
                 "               (DWBA input only; no effect on native decks).\n"
+                "  -h, --help   print this usage summary and exit.\n"
                 "  input_file   path to input deck; if omitted, reads stdin.\n"
                 "               Accepts a native Ptolemy deck or a DWBA reaction\n"
                 "               description.\n",

@@ -21,11 +21,12 @@ architecture.
 ## Quick start
 
 ```bash
-make                    # builds ./ptolemy
-./ptolemy < test_inputs/transfer_12C_dp.in    # run one reaction
-./test_ptolemy.sh       # full 36-test bit-identical regression vs Maple
-make test               # builds + runs the 122 unit tests
-make distclean          # clean build + binaries
+make                                            # builds ./ptolemy
+./ptolemy test_inputs/transfer_48Ca_dp.in       # run a native Ptolemy deck
+./ptolemy test_inputs/dwba/transfer_208Pb_dp.dwba  # run a DWBA reaction description
+./test_ptolemy.sh                               # full bit-identical regression vs Maple
+make test                                       # builds + runs the 122 unit tests
+make distclean                                  # clean build + binaries
 ```
 
 Requires `g++` with C++17 support. No external dependencies.
@@ -37,6 +38,55 @@ path or skip the diff when unavailable:
 ```bash
 Ptolemy-f2c=/path/to/your/ptolemy ./test_ptolemy.sh    # custom reference
 Ptolemy-f2c=missing ./test_ptolemy.sh                  # PtolemyCpp-only, skip diff
+```
+
+## Command-line reference
+
+```
+Usage: ptolemy [--fixedLS] [--dwba] [--create-infile path] [input_file]
+```
+
+Flags may appear in any order before `input_file`. If `input_file` is omitted,
+the input is read from **stdin** (the legacy `./ptolemy < input.in` shape).
+`./ptolemy --help` (or `-h`) prints the usage summary.
+
+### Flags
+
+| Flag | Aliases | Argument | Effect |
+|------|---------|----------|--------|
+| `--fixedLS` | `--fixed-ls` | — | Use physics-standard `<L*S>` spin-orbit coupling. Default is the Cleopatra-faithful `σ·L` convention — see the “Spin-orbit convention” section (under Contributing) for the full explanation and `Vso` conversion table. The in-deck keyword `FIXEDLS` is equivalent. |
+| `--dwba` | `--DWBA` | — | Force DWBA input mode (the human-readable reaction description). Without this flag the input type is auto-detected. |
+| `--create-infile` | `--create-infile=path` | `path` (required) | Write the expanded Ptolemy deck to `path` before running it. DWBA input only; on a native deck nothing is written and a note goes to stderr. |
+| `--help` | `-h` | — | Print the usage summary and exit. |
+
+Flags combine freely, e.g.
+`./ptolemy --fixedLS --create-infile deck.in my_reactions.txt`.
+
+### Input types
+
+Two input formats are accepted, either as a file argument or on stdin:
+
+| Format | What it is | File argument | stdin |
+|---|---|---|---|
+| **Native Ptolemy deck** (e.g. `test_inputs/transfer_48Ca_dp.in`) | Full deck: `REACTION:` / `CHANNEL` / `PARAMETERSET` header, `PROJECTILE` / `TARGET` / `INCOMING` / `OUTGOING` blocks, angular range, `end` | default when the content is not DWBA | first byte is not a digit |
+| **DWBA reaction description** (e.g. `test_inputs/dwba/transfer_208Pb_dp.dwba`) | One `target(in,out)residual ...` line per reaction; expanded in memory into a native deck (potentials, vertices, angular grid) and then run | first content line is a reaction line with ≥ 7 tokens, or the literal `DWBA` keyword | first byte is a mass number (digit); otherwise pass `--dwba` |
+
+Notes:
+
+- Detection is **content-based, not by file extension** — any filename works.
+- A file whose first content line is the literal `DWBA` keyword is always
+  treated as a DWBA description (the keyword line is stripped before
+  expansion).
+- Piped DWBA streams with leading `#` comments or a `DWBA` keyword line are
+  not auto-detected on stdin; use `--dwba` or pass the file as an argument.
+- Full DWBA field spec, validity checks, and optical-potential codes:
+  [DWBA input format](#dwba-input-format).
+
+```bash
+./ptolemy test_inputs/transfer_48Ca_dp.in                   # native deck (file)
+./ptolemy test_inputs/dwba/transfer_208Pb_dp.dwba           # DWBA (file, auto-detected)
+./ptolemy < test_inputs/transfer_48Ca_dp.in                 # native deck (stdin)
+echo '208Pb(d,p)209Pb  0+  0g9/2  9/2+  0.000  7MeV/u  AK' | ./ptolemy  # DWBA (stdin)
 ```
 
 ## DWBA input format
@@ -138,9 +188,9 @@ and A=3 single-nucleon transfer using the `phiffer` projectile fit (e.g.
 ## Stats
 
 - **30,175 LOC** across 56 `.cpp` / 51 `.h` (down from 38k Fortran baseline, −21%)
-- **36/36** reaction tests bit-identical to Cleopatra (via Maple oracle) — 3 CC tests skipped (coupled channels not yet implemented)
-- **117/117** unit tests pass
-- **~1.0s** wall vs Maple ~5.0s on the full 36-test suite at `-O2` (~4.9× faster)
+- **38/38** reaction tests bit-identical to Cleopatra (via Maple oracle) — 3 CC tests skipped (coupled channels not yet implemented)
+- **122/122** unit tests pass
+- **~1.0s** wall vs Maple ~5.0s on the full 38-test suite at `-O2` (~4.9× faster)
 
 ## Architecture
 
@@ -247,21 +297,21 @@ better, because the broken extrapolation simply runs longer.
 use FRESCO or ECIS with an explicit microscopic form factor, or
 compare against experimental data.
 
-**Reactions inside the model's domain are unaffected.** The 35-test
-regression suite (PtolemyCpp vs Cleopatra) passes 35/35 bit-identical;
+**Reactions inside the model's domain are unaffected.** The 38-test
+regression suite (PtolemyCpp vs Cleopatra) passes 38/38 bit-identical;
 the 800-case random sweep shows 294/300 transfer + 199/200 elastic +
 238/300 inelastic PASS, with all 62 inelastic FAILs concentrated in the
 problematic regime.
 
 ## Testing
 
-The regression suite (`./test_ptolemy.sh`) runs 36 non-CC tests and compares
+The regression suite (`./test_ptolemy.sh`) runs 38 non-CC tests and compares
 PtolemyCpp output line-by-line against the Maple reference (the Cleopatra-
-verified Fortran oracle). All 36 tests pass bit-identical, including:
+verified Fortran oracle). All 38 tests pass bit-identical, including:
 
-- **Elastic scattering**: 6 tests (p, d, α on various targets)
+- **Elastic scattering**: 9 tests (p, d, α on various targets)
 - **Inelastic scattering**: 11 tests (collective excitations)
-- **Transfer reactions**: 19 tests including:
+- **Transfer reactions**: 18 tests including:
   - Single-nucleon: (d,p), (d,³He), (³He,d), (p,d), etc.
   - Heavy-ion: (¹⁶O,¹⁵N), (¹⁶O,¹⁶O*), etc.
   - Two-nucleon: (d,t), (³He,α), etc.
@@ -277,15 +327,15 @@ MAPLE=~/OPENCLAW_SPACE/Maple/ptolemy ./test_ptolemy.sh  # custom Maple path
 MAPLE=missing ./test_ptolemy.sh      # skip diff, PtolemyCpp-only
 ```
 
-Unit tests: `make test` runs 117 tests covering special functions,
-numerov solver, optical potentials, kinematics, etc.
+Unit tests: `make test` runs 122 tests covering special functions,
+numerov solver, optical potentials, DWBA expansion/CLI, kinematics, etc.
 
 ## Contributing
 
 Run `./test_ptolemy.sh` to verify any change is bit-identical against the
 Maple oracle. Run `make test` for the unit tests. PRs welcome.
 
-The single hard rule: **commits must preserve bit-identical 36/36 + 117/117.**
+The single hard rule: **commits must preserve bit-identical 38/38 + 122/122.**
 The exp recurrences in `OpticalPotential::fillWoodsSaxon` etc. are not
 equivalent to per-point `std::exp()`, so refactors there require care.
 
