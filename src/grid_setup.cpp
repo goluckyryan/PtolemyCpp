@@ -1008,9 +1008,19 @@ void DWBAGrid::gridSet(int& returnCode, Reaction& reaction) {
             if (!isFirstPass) {
                 // Pass 2: store phi angles and weighted BS product
                 phiCount++;
-                temp = (t1*rO + s1*rI*x) / rT;
+                // Fix (not in Fortran, source.f:19303): the form-factor evaluation
+                // snaps rT/rP to exactly 0 when rT**2 < 1e-8, which gives 0/0 = NaN
+                // here. The NaN spreads into the H's, and the SFROMI NaN guard then zeroes
+                // whole partial waves, so sigma(E) jumps erratically (e.g. 27Mg(d,p)
+                // at ELAB=24/25/27 MeV with dpsb; Fortran prints NaN). At r=0 the
+                // azimuth is irrelevant (only Y00 survives), so use angle 0, and
+                // clamp the cosine against roundoff outside [-1,1].
+                // Same fix as Ptolemy-f2c commit f2dbadb.
+                temp = (rT > 0.0) ? (t1*rO + s1*rI*x) / rT : 1.0;
+                temp = std::min(1.0, std::max(-1.0, temp));
                 phiTPointer[phiCount] = (float)(phiSign * std::acos(temp));
-                temp = (t2*rO + s2*rI*x) / rP;
+                temp = (rP > 0.0) ? (t2*rO + s2*rI*x) / rP : 1.0;
+                temp = std::min(1.0, std::max(-1.0, temp));
                 phiPPointer[phiCount] = (float)(phiSign * std::acos(temp));
                 phiPointer[phiCount]  = (float)phi;
                 trapWeightPointer[phiCount]  = (float)(dPhi * fifo);

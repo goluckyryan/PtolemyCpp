@@ -257,6 +257,30 @@ expansion) live behind the `LinkulePlugin` interface.
 
 Stable. Bit-identical regression-tested. Open for contribution.
 
+### Fixed (2026-11): stripping on targets with non-zero spin
+
+Before this fix, any **stripping** reaction on a target with spin ≠ 0 (an odd-A
+target such as 27Mg 1/2⁺) was handled wrongly:
+
+- **With `JBIGA=1/2+`** (which the DWBA front end always writes for odd-A
+  targets): crash with `std::length_error`.
+- **Without `JBIGA`:** wrong answer, e.g. 27Mg(d,p)28Mg g.s. at 20 MeV gave
+  13.502 mb instead of 3.3755.
+
+Cause: the input parser put the bound nucleon's `JP` into the total J of the
+residual nucleus. That is only correct when the target has spin 0, which is
+true of every deck in the test suite. In addition, `J=` and `JP=` shared one
+field, and an omitted `JBIGA` defaulted to 0 instead of the mass-table spin.
+The parser now matches Fortran SETCHN: `JP` is the nucleon j, `J` is the
+composite J, and an unset `J` comes from the REACTION line. Pickup reactions
+were not affected. Results now agree bit-identically with Ptolemy-f2c.
+
+The same release ports the Ptolemy-f2c GRDSET fix. The original Fortran
+divides by r_T = 0 when a grid point puts the transferred nucleon on the core,
+and prints NaN, e.g. 27Mg(d,p) at 24/25/27 MeV with `dpsb`. Earlier
+PtolemyCpp versions silently zeroed the affected partial waves instead.
+`test_inputs/transfer_27Mg_dp_oddA.in` covers both fixes.
+
 ### Known limitations — collective inelastic model has a narrow domain
 
 PtolemyCpp's inelastic scattering uses the **vibrational / collective
@@ -313,9 +337,9 @@ problematic regime.
 
 ## Testing
 
-The regression suite (`./test_ptolemy.sh`) runs 38 non-CC tests and compares
+The regression suite (`./test_ptolemy.sh`) runs 39 non-CC tests and compares
 PtolemyCpp output line-by-line against the Maple reference (the Cleopatra-
-verified Fortran oracle). All 38 tests pass bit-identical, including:
+verified Fortran oracle). The tests include:
 
 - **Elastic scattering**: 9 tests (p, d, α on various targets)
 - **Inelastic scattering**: 11 tests (collective excitations)
@@ -324,6 +348,12 @@ verified Fortran oracle). All 38 tests pass bit-identical, including:
   - Heavy-ion: (¹⁶O,¹⁵N), (¹⁶O,¹⁶O*), etc.
   - Two-nucleon: (d,t), (³He,α), etc.
   - **Phiffer bound states**: (d,p) and (¹⁶O,¹⁵N) with `WAVEFUNCTION PHIFFER`
+  - **Odd-A target**: 27Mg(1/2⁺)(d,p) (`transfer_27Mg_dp_oddA.in`)
+
+Known non-PASS when built with gcc 15 (they were failing before the odd-A
+fix): `test_transfer_ALPHA2` differs only in the `% FROM L>LMAX` diagnostic
+at 90° (−0.2 vs −0.4; a gcc 13 build matches), and `original_Cleopatra_input`
+exceeds the reference binary's 60 s timeout.
 
 The (d,³He) reaction `Al_40Ca_d3He_2.47.in` is explicitly tested and verified
 bit-identical vs Maple. The phiffer linkule (linkule 17) is tested in 4 input

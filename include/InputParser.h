@@ -77,7 +77,9 @@ struct ParsedInput {
     struct BSParams {
         int    nodes   = 0;
         int    l       = 0;
-        double j       = -1.0;   // half-integer allowed; -1 = not set
+        double j       = -1.0;   // JP= : j of the bound nucleon (Fortran JP); -1 = not set
+        double jTotal  = -1.0;   // J=  : total J of the composite (Fortran J); -1 = not set,
+                                 //       then SETCHN takes it from the REACTION line (js[boundIndex])
         double V       = 0.0;    // real depth (MeV); 0 = use eigenvalue search
         double r0      = 1.0;    // radius parameter (fm)
         double r       = 0.0;    // radius in fm (Fortran compat: R = r0 * A^(1/3))
@@ -96,7 +98,8 @@ struct ParsedInput {
     };
     BSParams projectileBs;      // PROJECTILE block
     BSParams targetBs;          // TARGET block
-    int      jResidual   = 0;        // 2*J for residual (read as "jResidual=0+")
+    int      jBigA       = -1;       // 2*J of the target nucleus BIGA (keyword JBIGA, Fortran JS(3));
+                                     // -1 = not given -> ground-state spin from the mass table
 
     // Optical potential block. Each field has a paired `has<X>` bool that
     // marks whether the user explicitly wrote the keyword in the input deck.

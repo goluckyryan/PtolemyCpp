@@ -709,28 +709,32 @@ bool InputParser::parseKeyvals(const std::string& raw, ParsedInput::BSParams& bs
         if (tryBareInteger("N",     bs.nodes))  continue;  // Fortran also accepts bare N
 
         // jp=3/2 or jp=7/2-  (half-integer J); JP= and J= share the same body
-        auto parseBsJ = [&](const std::string& jStr) {
+        // JP= is the j of the bound nucleon; J= is the total J of the
+        // composite nucleus (Fortran JWRDS 'JP' vs 'J'). They are different
+        // quantities and must not share a field: they coincide only when the
+        // core has spin 0.
+        auto parseBsJ = [&](const std::string& jStr, double& dest) {
             int twoJ = 0;
             if (!jStr.empty()) {
-                if (parseHalfInt(jStr, twoJ)) bs.j = twoJ / 2.0;
+                if (parseHalfInt(jStr, twoJ)) dest = twoJ / 2.0;
             } else if (i + 1 < toks.size()) {
-                if (parseHalfInt(toUpper(toks[++i]), twoJ)) bs.j = twoJ / 2.0;
+                if (parseHalfInt(toUpper(toks[++i]), twoJ)) dest = twoJ / 2.0;
             }
         };
-        if (u.rfind("JP=", 0) == 0) { parseBsJ(u.substr(3)); continue; }
-        if (u.rfind("J=",  0) == 0) { parseBsJ(u.substr(2)); continue; }
+        if (u.rfind("JP=", 0) == 0) { parseBsJ(u.substr(3), bs.j);      continue; }
+        if (u.rfind("J=",  0) == 0) { parseBsJ(u.substr(2), bs.jTotal); continue; }
 
-        // jResidual=0+ (for TARGET)
+        // JBIGA=1/2+ (spin of the target nucleus, inside the TARGET block)
         if (u.rfind("JBIGA=", 0) == 0) {
             std::string jStr = u.substr(6);
             int twoJ = 0;
             if (!jStr.empty()) {
                 if (parseHalfInt(jStr, twoJ)) {
-                    d_.jResidual = twoJ;
+                    d_.jBigA = twoJ;
                 }
             } else if (i + 1 < toks.size()) {
                 if (parseHalfInt(toUpper(toks[++i]), twoJ)) {
-                    d_.jResidual = twoJ;
+                    d_.jBigA = twoJ;
                 }
             }
             continue;
@@ -868,20 +872,20 @@ bool InputParser::parseGlobalKeyvals(const std::string& raw) {
             continue;
         }
 
-        // jResidual=0+ at top level
+        // JBIGA=0+ at top level
         if (u.rfind("JBIGA=", 0) == 0) {
             std::string jStr = u.substr(6);
             int twoJ = 0;
             if (parseHalfInt(jStr, twoJ)) {
-                d_.jResidual = twoJ;
+                d_.jBigA = twoJ;
             }
             continue;
         }
-        // Bare jResidual= followed by value
+        // Bare JBIGA= followed by value
         if (u == "JBIGA=" && i + 1 < toks.size()) {
             int twoJ = 0;
             if (parseHalfInt(toks[i+1], twoJ)) {
-                d_.jResidual = twoJ; i++;
+                d_.jBigA = twoJ; i++;
             }
             continue;
         }
@@ -1003,10 +1007,10 @@ void InputParser::applyInputOverrides(Reaction& reaction) {
     if (d.hasAngleMax)   reaction.rxn.angleMax  = d.angleMax;
     if (d.hasAngleStep) reaction.rxn.angleStep = d.angleStep;
 
-    // jResidual (= js[3] = J of target nucleus = particle 3 in PTOLEMY indexing)
-    // jResidual=0+ means target ground state is J=0.
-    if (d.jResidual >= 0 && !d.isElastic)
-        reaction.angMom.js[3] = d.jResidual;
+    // JBIGA (= js[3] = J of target nucleus = particle 3 in PTOLEMY indexing).
+    // Only override when given; otherwise keep the mass-table ground-state spin.
+    if (d.jBigA >= 0 && !d.isElastic)
+        reaction.angMom.js[3] = d.jBigA;
 }
 
 // ============================================================================
@@ -1203,6 +1207,8 @@ void InputParser::applyToCommons(Reaction& reaction) {
         reaction.angMom.nNodes     = d.projectileBs.nodes;
         if (d.projectileBs.j >= 0)
             reaction.angMom.jProj = (int)(2.0 * d.projectileBs.j);
+        if (d.projectileBs.jTotal >= 0)
+            reaction.angMom.J = (int)(2.0 * d.projectileBs.jTotal);
         if (!d.projectileBs.wavefunction.empty()) {
             stuffInpbuf(d.projectileBs.wavefunction);
             char8 wfKey("WAVEFUNC");
@@ -1232,9 +1238,12 @@ void InputParser::applyToCommons(Reaction& reaction) {
 
     // ---- Channel 2: TARGET ----
     // For reaction.setChannel(2) the boundIndex index depends on stripPickup:
-    //   stripping (>0): boundIndex=4 → lSpecs[4], nodesP[4]; reaction.angMom.J = jp of transferred nucleon
-    //   pickup    (<0): boundIndex=3 → lSpecs[3], nodesP[3]; reaction.angMom.J left as notDefSentinel (SETCHN reads js[3]=J(target))
-    //                             reaction.angMom.jProj = jp of transferred nucleon
+    //   stripping (>0): boundIndex=4 → lSpecs[4], nodesP[4]
+    //   pickup    (<0): boundIndex=3 → lSpecs[3], nodesP[3]
+    // In both cases JP (jp of the transferred nucleon) goes to reaction.angMom.jProj
+    // and reaction.angMom.J (total J of the composite) stays notDefSentinel unless
+    // J= is given, so SETCHN takes it from js[boundIndex] (the REACTION line),
+    // exactly as Fortran SETCHN does.
     reaction.flags.hasNextBlock = 2;
     if (d.targetBs.set) {
         reaction.angMom.L     = d.targetBs.l;
@@ -1244,9 +1253,12 @@ void InputParser::applyToCommons(Reaction& reaction) {
             // Stripping: boundIndex=4, IT=3
             reaction.internalState.lSpecs[4] = d.targetBs.l;
             reaction.internalState.nodesP[4] = d.targetBs.nodes;
-            // reaction.angMom.J = jp of the transferred nucleon (= J of the residual's state)
+            // jp of the transferred nucleon -> jProj (Fortran JP). Do NOT put it in
+            // angMom.J: J is the residual's spin, equal to jp only for a spin-0
+            // core. Doing so forced e.g. J(28Mg g.s.)=1/2 in 27Mg(1/2+)(d,p), which
+            // zeroed every transfer amplitude and crashed xSection.
             if (d.targetBs.j >= 0)
-                reaction.angMom.J = (int)(2.0 * d.targetBs.j);
+                reaction.angMom.jProj = (int)(2.0 * d.targetBs.j);
         } else {
             // Pickup: boundIndex=3, IT=4
             // reaction.angMom.J is left notDefSentinel → SETCHN uses js[3] = J(target nucleus = 48Ca) = 0
@@ -1257,6 +1269,8 @@ void InputParser::applyToCommons(Reaction& reaction) {
                 reaction.angMom.jProj = (int)(2.0 * d.targetBs.j);
             // Leave reaction.angMom.J at notDefSentinel so SETCHN uses js[boundIndex=3] = J(composite/target)
         }
+        if (d.targetBs.jTotal >= 0)
+            reaction.angMom.J = (int)(2.0 * d.targetBs.jTotal);
         if (!d.targetBs.wavefunction.empty()) {
             stuffInpbuf(d.targetBs.wavefunction);
             char8 wfKey("WAVEFUNC");
