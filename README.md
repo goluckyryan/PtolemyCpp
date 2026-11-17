@@ -281,6 +281,15 @@ and prints NaN, e.g. 27Mg(d,p) at 24/25/27 MeV with `dpsb`. Earlier
 PtolemyCpp versions silently zeroed the affected partial waves instead.
 `test_inputs/transfer_27Mg_dp_oddA.in` covers both fixes.
 
+### Fixed (2026-11): absolute radii `R=` / `RC=` in bound-state blocks
+
+In Ptolemy, `R`/`RC` are absolute radii in fm and `R0`/`RC0` are reduced
+radii (× A^⅓). The parser treated `R=`/`RC=` as `R0`/`RC0`, so Cleopatra-style
+projectile blocks like `R = 1 A = 0.5 NODES=0 L = 0 Rc=1.2` made a 1.26 fm
+deuteron well instead of 1.0 fm. In `test_inputs/original_Cleopatra_input.in`,
+40Ca(d,³He) came out 1.4368 mb instead of 1.3598 (+5.7%). It now matches the
+Fortran. As in Fortran, `R0`/`RC0` take precedence when both forms are given.
+
 ### Known limitations — collective inelastic model has a narrow domain
 
 PtolemyCpp's inelastic scattering uses the **vibrational / collective
@@ -350,10 +359,12 @@ verified Fortran oracle). The tests include:
   - **Phiffer bound states**: (d,p) and (¹⁶O,¹⁵N) with `WAVEFUNCTION PHIFFER`
   - **Odd-A target**: 27Mg(1/2⁺)(d,p) (`transfer_27Mg_dp_oddA.in`)
 
-Known non-PASS when built with gcc 15 (they were failing before the odd-A
-fix): `test_transfer_ALPHA2` differs only in the `% FROM L>LMAX` diagnostic
-at 90° (−0.2 vs −0.4; a gcc 13 build matches), and `original_Cleopatra_input`
-exceeds the reference binary's 60 s timeout.
+Known non-PASS when built with gcc 15: `test_transfer_ALPHA2` differs only in
+the `% FROM L>LMAX` diagnostic at 90° (−0.2 vs −0.4; a gcc 13 build matches).
+
+`original_Cleopatra_input` has no `end` line. The reference f2c/Fortran binary
+prints its result and then loops forever on EOF, so it always hits the 60 s
+timeout, but the curve before that is still compared.
 
 The (d,³He) reaction `Al_40Ca_d3He_2.47.in` is explicitly tested and verified
 bit-identical vs Maple. The phiffer linkule (linkule 17) is tested in 4 input

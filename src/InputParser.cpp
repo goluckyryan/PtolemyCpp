@@ -667,8 +667,8 @@ bool InputParser::parseKeyvals(const std::string& raw, ParsedInput::BSParams& bs
         if (getDouble(tok, "R",    dv)) { bs.r    = dv; bs.hasR    = true; continue; }
         // Backward compat: Fortran PROJECTILE section uses "A = value" for diffuseness
         if (getDouble(tok, "A",    dv)) { bs.a    = dv; bs.hasA    = true; continue; }
-        // Backward compat: Fortran syntax uses "Rc" (Coulomb radius)
-        if (getDouble(tok, "RC",   dv)) { bs.rC0  = dv; bs.hasRC0  = true; continue; }
+        // Fortran syntax "Rc= value": absolute Coulomb radius in fm (not RC0)
+        if (getDouble(tok, "RC",   dv)) { bs.rC   = dv; bs.hasRC   = true; continue; }
         if (getDouble(tok, "VSO",  dv)) { bs.vSo  = dv; bs.hasVSO  = true; continue; }
         if (getDouble(tok, "RSO0", dv)) { bs.rSo0 = dv; bs.hasRSO0 = true; continue; }
         if (getDouble(tok, "ASO",  dv)) { bs.aSo  = dv; bs.hasASO  = true; continue; }
@@ -700,8 +700,8 @@ bool InputParser::parseKeyvals(const std::string& raw, ParsedInput::BSParams& bs
         if (tryBareDouble("RSO0", bs.rSo0, bs.hasRSO0)) continue;
         if (tryBareDouble("ASO",  bs.aSo,  bs.hasASO))  continue;
         if (tryBareDouble("RC0",  bs.rC0,  bs.hasRC0))  continue;
-        // Backward compat: Fortran syntax uses "Rc= value" (Coulomb radius)
-        if (tryBareDouble("RC",   bs.rC0,  bs.hasRC0))  continue;
+        // Fortran syntax "Rc= value": absolute Coulomb radius in fm (not RC0)
+        if (tryBareDouble("RC",   bs.rC,   bs.hasRC))   continue;
         if (tryBareDouble("E",    bs.E,    bs.hasE))    continue;
         if (tryBareInteger("L",     bs.l))      continue;
         // Backward compat: Fortran syntax uses "NODES= value" (also "NODES = value")
@@ -965,14 +965,27 @@ static bool setupScatteringChannel(int channel, const ParsedInput::OMParams& om,
 // omitting the keyword (same pattern as setOMparams).
 static void setBSparams(const ParsedInput::BSParams& bs, Reaction& reaction) {
     if (bs.hasV)    reaction.opticalPotentialParams.V   = bs.V;
-    // Backward compat: if R is given but R0 is not, use R as R0
-    if (bs.hasR0)   reaction.opticalPotentialParams.R0  = bs.r0;
-    else if (bs.hasR) reaction.opticalPotentialParams.R0  = bs.r;
+    // R / RC are absolute radii in fm; R0 / RC0 are reduced radii (x A^1/3).
+    // As in Fortran SETPOT, R0 wins when both are given; an absolute R must
+    // leave R0 undefined so setupOptical uses it as is. (Treating R as R0, as
+    // done before, made "R = 1" a 1.26 fm well for the deuteron and changed
+    // 40Ca(d,3He) by 6%.)
+    if (bs.hasR0) {
+        reaction.opticalPotentialParams.R0 = bs.r0;
+    } else if (bs.hasR) {
+        reaction.integrationGrid.R = bs.r;
+        reaction.opticalPotentialParams.R0 = reaction.internalState.undefValue;
+    }
     if (bs.hasA)    reaction.opticalPotentialParams.A   = bs.a;
     if (bs.hasVSO)  reaction.opticalPotentialParams.vSo = bs.vSo;
     if (bs.hasRSO0) reaction.opticalPotentialParams.rSo0= bs.rSo0;
     if (bs.hasASO)  reaction.opticalPotentialParams.aSo = bs.aSo;
-    if (bs.hasRC0)  reaction.opticalPotentialParams.rC0 = bs.rC0;
+    if (bs.hasRC0) {
+        reaction.opticalPotentialParams.rC0 = bs.rC0;
+    } else if (bs.hasRC) {
+        reaction.opticalPotentialParams.rC  = bs.rC;
+        reaction.opticalPotentialParams.rC0 = reaction.internalState.undefValue;
+    }
 }
 
 // ============================================================================
